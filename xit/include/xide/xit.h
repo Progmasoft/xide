@@ -26,7 +26,9 @@ typedef enum XitStatus
   XIT_STATUS_OK = 0,
   XIT_STATUS_INVALID_ARGUMENT = 1,
   XIT_STATUS_INCOMPATIBLE_STRUCT = 2,
-  XIT_STATUS_BUFFER_TOO_SMALL = 3
+  XIT_STATUS_BUFFER_TOO_SMALL = 3,
+  XIT_STATUS_PLATFORM_UNAVAILABLE = 4,
+  XIT_STATUS_GRAPHICS_UNAVAILABLE = 5
 } XitStatus;
 
 typedef struct XitRuntimeInfo
@@ -41,5 +43,7 @@ typedef struct XitRuntimeInfo
 XIT_API XitStatus xit_runtime_info(XitRuntimeInfo *out_info);
 
 XIT_API XitStatus xit_runtime_description(char *buffer, size_t buffer_size, size_t *out_required_size);
+
+#include <xide/xit_window.h>
 
 #endif

@@ -16,8 +16,9 @@ stage; it is not ready for daily use.
 - Java and XIT will communicate through a narrow, versioned C ABI exposed to Java through FFM.
 - XIT is purpose-built for Xide. It does not use GTK, Qt, Tauri, Electron, Skia, or a browser runtime.
 
-Planned platform backends are AppKit/Metal/Core Text on macOS, Wayland or XCB/OpenGL 4.5/FreeType/HarfBuzz on Linux,
-and Win32/D3D11/DirectWrite on Windows.
+Planned platform backends use Metal/Core Text on macOS, native Wayland and native X11 through XCB on Linux, and
+Win32/D3D11/DirectWrite on Windows. The Linux renderer selects an OpenGL 4.5 core context when supported and otherwise
+uses OpenGL 4.2 core. It does not route the Wayland backend through XWayland.
 
 Xide's built-in language priority is X#, Java, Swift, Kotlin/JVM, Objective-C, Objective-C++, C++, and C, in that order.
 Xide will integrate with `xs`, SwiftPM, Gradle, CMake, and Conan. Languages outside this list, including Rust, belong to
@@ -35,10 +36,12 @@ The first `xide-document` module provides a small UTF-16-aware document snapshot
 - line/column conversion using Java and LSP-compatible UTF-16 code units;
 - stale-version protection for concurrent editor consumers.
 
-The first XIT slice provides a versioned C ABI runtime probe backed by Objective-C23 and GNUstep Base on Linux. It
-establishes the native-library boundary and FFM-compatible data layout without defining widgets or renderer behavior.
+The first XIT slice provides a versioned C ABI runtime probe and an Objective-C23 X11-native presentation surface on
+Linux. XCB owns the native window and event loop; EGL creates an OpenGL core context; XIT clears and presents a black
+frame. GNUstep Base is used by the runtime probe, not as a GUI toolkit. The public backend boundary reserves a separate
+Wayland-native implementation without silently falling back to X11.
 
-No UI, renderer, plugin API, or language server is claimed yet.
+No widget system, layout engine, plugin API, or language server is claimed yet.
 
 ## Build
 
@@ -48,12 +51,18 @@ Xide requires JDK 25. Use the pinned Gradle wrapper:
 ./gradlew check
 ```
 
-Build the current Linux XIT slice with Clang, LLD, Ninja, and GNUstep Base:
+Build the current Linux XIT slice with Clang, LLD, Ninja, GNUstep Base, XCB, EGL, and OpenGL:
 
 ```text
 cmake --preset clang-debug -S xit
 cmake --build xit/build/clang-debug
 ctest --test-dir xit/build/clang-debug --output-on-failure
+```
+
+Run the first native X11 surface:
+
+```text
+xit/build/clang-debug/xit_black_surface
 ```
 
 ## License

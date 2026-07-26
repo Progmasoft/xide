@@ -26,3 +26,17 @@ GNUstep Base
 The first Linux XIT runtime slice dynamically links GNUstep Base. GNUstep Base
 is licensed under the GNU Lesser General Public License:
 https://github.com/gnustep/libs-base/blob/master/COPYING
+
+XCB
+---
+
+The Linux X11 backend dynamically links XCB. XCB is distributed under the
+MIT/X11 license:
+https://gitlab.freedesktop.org/xorg/lib/libxcb
+
+Mesa EGL and OpenGL
+-------------------
+
+The Linux presentation backend dynamically links EGL and OpenGL. The tested
+implementation is Mesa, which is distributed primarily under the MIT license:
+https://gitlab.freedesktop.org/mesa/mesa

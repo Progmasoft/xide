@@ -32,7 +32,14 @@ jobs:
       - name: Add user tools to PATH
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Install XIT toolchain
-        run: sudo apt-get update && sudo apt-get install --yes clang clang-tidy lld ninja-build libgnustep-base-dev
+        run: >-
+          sudo apt-get update &&
+          sudo apt-get install --yes
+          clang clang-tidy lld ninja-build
+          libgnustep-base-dev libxcb1-dev libegl-dev libgl-dev libgl1-mesa-dri
+          xauth xvfb
       - run: cmake --preset clang-debug -S xit
       - run: cmake --build xit/build/clang-debug
       - run: ctest --test-dir xit/build/clang-debug --output-on-failure
+      - name: Run X11 OpenGL surface smoke test
+        run: xvfb-run --auto-servernum xit/build/clang-debug/xit_black_surface --frames 2

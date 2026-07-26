@@ -35,7 +35,7 @@ HeaderFileExtensions:
   - h
 ImplementationFileExtensions:
   - m
-HeaderFilterRegex: ".*/xit/(include|sources|tests)/.*"
+HeaderFilterRegex: ".*/xit/(examples|include|sources|tests)/.*"
 SystemHeaders: false
 FormatStyle: file
 InheritParentConfig: false

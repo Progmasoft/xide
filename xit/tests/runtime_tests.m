@@ -42,6 +42,14 @@ int main(void)
   failures +=
       check(strstr(description, "GNUstep Base") != nullptr, "description identifies GNUstep Base");
 
+  const XitWindowConfig short_config = {.struct_size = 1, .width = 640, .height = 480};
+  failures += check(xit_window_run(&short_config) == XIT_STATUS_INCOMPATIBLE_STRUCT,
+                    "short window configuration is rejected before platform access");
+
+  const XitWindowConfig empty_config = {.struct_size = sizeof(empty_config)};
+  failures += check(xit_window_run(&empty_config) == XIT_STATUS_INVALID_ARGUMENT,
+                    "empty window dimensions are rejected before platform access");
+
   char too_small[2] = {0};
   failures += check(xit_runtime_description(too_small, sizeof(too_small), &required_size) ==
                         XIT_STATUS_BUFFER_TOO_SMALL,
