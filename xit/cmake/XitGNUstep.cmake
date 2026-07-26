@@ -20,7 +20,19 @@ find_path(
   REQUIRED)
 
 find_library(XIT_GNUSTEP_BASE_LIBRARY NAMES gnustep-base REQUIRED)
-find_library(XIT_OBJC_RUNTIME_LIBRARY NAMES objc REQUIRED)
+find_library(XIT_OBJC_RUNTIME_LIBRARY NAMES objc)
+
+if(NOT XIT_OBJC_RUNTIME_LIBRARY)
+  execute_process(
+    COMMAND "${CMAKE_OBJC_COMPILER}" -print-file-name=libobjc.so
+    OUTPUT_VARIABLE XIT_OBJC_RUNTIME_LIBRARY
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY)
+
+  if(NOT IS_ABSOLUTE "${XIT_OBJC_RUNTIME_LIBRARY}" OR NOT EXISTS "${XIT_OBJC_RUNTIME_LIBRARY}")
+    message(FATAL_ERROR "Clang could not locate the Objective-C runtime library")
+  endif()
+endif()
 
 add_library(XitGNUstepBase INTERFACE)
 add_library(Xit::GNUstepBase ALIAS XitGNUstepBase)
