@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 Leitwolf <xs-lang.chess031@slmails.com>
+# SPDX-License-Identifier: MPL-2.0
+
+# yaml-language-server: $schema=https://json.schemastore.org/clang-format
+---
+Language: ObjC
+BasedOnStyle: LLVM
+
+ColumnLimit: 100
+IndentWidth: 2
+ContinuationIndentWidth: 4
+TabWidth: 2
+UseTab: Never
+
+BreakBeforeBraces: Allman
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+BinPackArguments: false
+BinPackParameters: OnePerLine
+BreakFunctionDefinitionParameters: false
+AlignAfterOpenBracket: Align
+PointerAlignment: Right
+DerivePointerAlignment: false
+
+ObjCBlockIndentWidth: 2
+ObjCBreakBeforeNestedBlockParam: true
+ObjCSpaceAfterProperty: true
+ObjCSpaceBeforeProtocolList: true
+ObjCBinPackProtocolList: Never
+
+IncludeBlocks: Preserve
+SortIncludes:
+  Enabled: true
+  IgnoreCase: false
+  IgnoreExtension: false
+IncludeCategories:
+  - Regex: '^<xide/'
+    Priority: 1
+  - Regex: '^<Foundation/'
+    Priority: 2
+  - Regex: '^<[^>]+>'
+    Priority: 3
+  - Regex: '.*'
+    Priority: 4
+
+SpaceBeforeParens: Never
+IndentPPDirectives: BeforeHash
+PPIndentWidth: 2
+MacroBlockBegin: '^NS_ASSUME_NONNULL_BEGIN$'
+MacroBlockEnd: '^NS_ASSUME_NONNULL_END$'
+AttributeMacros:
+  - XIT_API
+
+ReflowComments: true
+LineEnding: LF
+InsertNewlineAtEOF: true
+...

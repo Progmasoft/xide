@@ -22,3 +22,17 @@ jobs:
           java-version: "25"
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew check
+
+  xit-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install CMake
+        run: python3 -m pip install --user "cmake>=3.31,<5"
+      - name: Add user tools to PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install XIT toolchain
+        run: sudo apt-get update && sudo apt-get install --yes clang clang-tidy lld ninja-build libgnustep-base-dev
+      - run: cmake --preset clang-debug -S xit
+      - run: cmake --build xit/build/clang-debug
+      - run: ctest --test-dir xit/build/clang-debug --output-on-failure

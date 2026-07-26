@@ -19,3 +19,10 @@ Eclipse Public License 2.0:
 https://github.com/junit-team/junit-framework/blob/main/LICENSE.md
 
 These notices do not change the MPL-2.0 license of Xide source files.
+
+GNUstep Base
+------------
+
+The first Linux XIT runtime slice dynamically links GNUstep Base. GNUstep Base
+is licensed under the GNU Lesser General Public License:
+https://github.com/gnustep/libs-base/blob/master/COPYING

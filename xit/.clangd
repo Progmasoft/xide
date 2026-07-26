@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 Leitwolf <xs-lang.chess031@slmails.com>
+# SPDX-License-Identifier: MPL-2.0
+
+---
+If:
+  PathMatch: '.*\.m$'
+CompileFlags:
+  Compiler: /usr/bin/clang
+  CompilationDatabase: build/clang-debug
+  Remove:
+    - '-std=*'
+    - '-Werror'
+  Add:
+    - '-x'
+    - 'objective-c'
+    - '-std=c23'
+    - '-fobjc-exceptions'
+    - '-fconstant-string-class=NSConstantString'
+    - '-DGNUSTEP'
+    - '-DGNUSTEP_BASE_LIBRARY=1'
+    - '-DGNU_RUNTIME=1'
+    - '-Iinclude'
+    - '-I/usr/include'
+
+---
+If:
+  PathMatch: '.*\.(c|h)$'
+CompileFlags:
+  Compiler: /usr/bin/clang
+  CompilationDatabase: build/clang-debug
+  Remove:
+    - '-std=*'
+    - '-Werror'
+  Add:
+    - '-std=c23'
+    - '-Iinclude'
+
+---
+Index:
+  Background: Build
+  StandardLibrary: true
+Diagnostics:
+  ClangTidy:
+    FastCheckFilter: Strict
+  MissingIncludes: Strict
+  UnusedIncludes: Strict
+Completion:
+  AllScopes: true
+  ArgumentLists: FullPlaceholders
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+Hover:
+  ShowAKA: true
+...
