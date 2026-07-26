@@ -6,7 +6,11 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 find_package(Threads REQUIRED)
-find_path(XIT_GNUSTEP_INCLUDE_DIR Foundation/Foundation.h REQUIRED)
+find_path(
+  XIT_GNUSTEP_INCLUDE_DIR
+  Foundation/Foundation.h
+  PATH_SUFFIXES GNUstep
+  REQUIRED)
 
 file(GLOB XIT_OBJC_RUNTIME_INCLUDE_CANDIDATES LIST_DIRECTORIES true "/usr/lib/gcc/*/*/include")
 find_path(
