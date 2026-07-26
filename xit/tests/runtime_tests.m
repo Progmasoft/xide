@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#include <xide/xit.h>
+#import <xide/xit.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -30,20 +30,22 @@ int main(void)
                     "runtime reports version 0.0.1");
 
   size_t required_size = 0;
-  failures +=
-      check(xit_runtime_description(nullptr, 0, &required_size) == XIT_STATUS_OK, "description size query succeeds");
+  failures += check(xit_runtime_description(nullptr, 0, &required_size) == XIT_STATUS_OK,
+                    "description size query succeeds");
   failures += check(required_size > 1, "description is not empty");
 
   char description[256] = {0};
   failures += check(required_size <= sizeof(description), "description fits the test buffer");
-  failures += check(xit_runtime_description(description, sizeof(description), &required_size) == XIT_STATUS_OK,
+  failures += check(xit_runtime_description(description, sizeof(description), &required_size) ==
+                        XIT_STATUS_OK,
                     "description copy succeeds");
-  failures += check(strstr(description, "GNUstep Base") != nullptr, "description identifies GNUstep Base");
+  failures +=
+      check(strstr(description, "GNUstep Base") != nullptr, "description identifies GNUstep Base");
 
   char too_small[2] = {0};
-  failures +=
-      check(xit_runtime_description(too_small, sizeof(too_small), &required_size) == XIT_STATUS_BUFFER_TOO_SMALL,
-            "small destination is rejected");
+  failures += check(xit_runtime_description(too_small, sizeof(too_small), &required_size) ==
+                        XIT_STATUS_BUFFER_TOO_SMALL,
+                    "small destination is rejected");
 
   return failures == 0 ? 0 : 1;
 }

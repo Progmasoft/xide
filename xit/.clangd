@@ -24,7 +24,7 @@ CompileFlags:
 
 ---
 If:
-  PathMatch: '.*\.(c|h)$'
+  PathMatch: '.*\.h$'
 CompileFlags:
   Compiler: /usr/bin/clang
   CompilationDatabase: build/clang-debug
@@ -32,6 +32,8 @@ CompileFlags:
     - '-std=*'
     - '-Werror'
   Add:
+    - '-x'
+    - 'objective-c'
     - '-std=gnu23'
     - '-Iinclude'
 

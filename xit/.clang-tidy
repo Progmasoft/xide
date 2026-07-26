@@ -34,10 +34,8 @@ WarningsAsErrors: "*"
 HeaderFileExtensions:
   - h
 ImplementationFileExtensions:
-  - c
   - m
 HeaderFilterRegex: ".*/xit/(include|sources|tests)/.*"
-ExcludeHeaderFilterRegex: "(^|.*/)(build|vendor|third_party|external)/.*"
 SystemHeaders: false
 FormatStyle: file
 InheritParentConfig: false

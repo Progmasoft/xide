@@ -13,7 +13,6 @@
       "binaryDir": "${sourceDir}/build/clang-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "/usr/bin/clang",
         "CMAKE_OBJC_COMPILER": "/usr/bin/clang",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "XIT_ENABLE_CLANG_TIDY": "ON"

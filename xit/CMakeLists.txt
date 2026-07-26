@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.31)
 
-project(XIT VERSION 0.0.1 LANGUAGES C OBJC)
+project(XIT VERSION 0.0.1 LANGUAGES OBJC)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -33,13 +33,9 @@ target_link_libraries(xit PRIVATE Xit::GNUstepBase)
 
 set_target_properties(
   xit
-  PROPERTIES C_STANDARD 23
-             C_STANDARD_REQUIRED ON
-             C_EXTENSIONS ON
-             OBJC_STANDARD 23
+  PROPERTIES OBJC_STANDARD 23
              OBJC_STANDARD_REQUIRED ON
              OBJC_EXTENSIONS ON
-             C_VISIBILITY_PRESET hidden
              OBJC_VISIBILITY_PRESET hidden
              VISIBILITY_INLINES_HIDDEN ON
              VERSION "${PROJECT_VERSION}"
@@ -52,17 +48,17 @@ if(XIT_ENABLE_CLANG_TIDY)
 endif()
 
 if(BUILD_TESTING)
-  add_executable(xit_runtime_tests tests/runtime_tests.c)
+  add_executable(xit_runtime_tests tests/runtime_tests.m)
   target_link_libraries(xit_runtime_tests PRIVATE Xide::XIT)
   set_target_properties(
     xit_runtime_tests
-    PROPERTIES C_STANDARD 23
-               C_STANDARD_REQUIRED ON
-               C_EXTENSIONS ON)
+    PROPERTIES OBJC_STANDARD 23
+               OBJC_STANDARD_REQUIRED ON
+               OBJC_EXTENSIONS ON)
   xit_enable_strict_warnings(xit_runtime_tests)
 
   if(XIT_ENABLE_CLANG_TIDY)
-    set_target_properties(xit_runtime_tests PROPERTIES C_CLANG_TIDY "${XIT_CLANG_TIDY}")
+    set_target_properties(xit_runtime_tests PROPERTIES OBJC_CLANG_TIDY "${XIT_CLANG_TIDY}")
   endif()
 
   add_test(NAME xit.runtime COMMAND xit_runtime_tests)

@@ -5,7 +5,6 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
   message(FATAL_ERROR "The first XIT runtime slice currently supports Linux with GNUstep Base")
 endif()
 
-find_package(Threads REQUIRED)
 find_path(
   XIT_GNUSTEP_INCLUDE_DIR
   Foundation/Foundation.h
@@ -59,11 +58,12 @@ target_compile_definitions(
             GS_USE_LIBDISPATCH=0)
 target_compile_options(
   XitGNUstepBase
-  INTERFACE "$<$<COMPILE_LANGUAGE:OBJC>:-fobjc-exceptions>"
+  INTERFACE -pthread
+            "$<$<COMPILE_LANGUAGE:OBJC>:-fobjc-exceptions>"
             "$<$<COMPILE_LANGUAGE:OBJC>:-fconstant-string-class=NSConstantString>")
+target_link_options(XitGNUstepBase INTERFACE -pthread)
 target_link_libraries(
   XitGNUstepBase
   INTERFACE "${XIT_GNUSTEP_BASE_LIBRARY}"
             "${XIT_OBJC_RUNTIME_LIBRARY}"
-            Threads::Threads
             m)
