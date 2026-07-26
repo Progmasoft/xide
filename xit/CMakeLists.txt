@@ -35,10 +35,10 @@ set_target_properties(
   xit
   PROPERTIES C_STANDARD 23
              C_STANDARD_REQUIRED ON
-             C_EXTENSIONS OFF
+             C_EXTENSIONS ON
              OBJC_STANDARD 23
              OBJC_STANDARD_REQUIRED ON
-             OBJC_EXTENSIONS OFF
+             OBJC_EXTENSIONS ON
              C_VISIBILITY_PRESET hidden
              OBJC_VISIBILITY_PRESET hidden
              VISIBILITY_INLINES_HIDDEN ON
@@ -58,7 +58,7 @@ if(BUILD_TESTING)
     xit_runtime_tests
     PROPERTIES C_STANDARD 23
                C_STANDARD_REQUIRED ON
-               C_EXTENSIONS OFF)
+               C_EXTENSIONS ON)
   xit_enable_strict_warnings(xit_runtime_tests)
 
   if(XIT_ENABLE_CLANG_TIDY)

@@ -13,7 +13,7 @@ CompileFlags:
   Add:
     - '-x'
     - 'objective-c'
-    - '-std=c23'
+    - '-std=gnu23'
     - '-fobjc-exceptions'
     - '-fconstant-string-class=NSConstantString'
     - '-DGNUSTEP'
@@ -32,7 +32,7 @@ CompileFlags:
     - '-std=*'
     - '-Werror'
   Add:
-    - '-std=c23'
+    - '-std=gnu23'
     - '-Iinclude'
 
 ---

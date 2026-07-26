@@ -30,7 +30,18 @@ if(NOT XIT_OBJC_RUNTIME_LIBRARY)
     COMMAND_ERROR_IS_FATAL ANY)
 
   if(NOT IS_ABSOLUTE "${XIT_OBJC_RUNTIME_LIBRARY}" OR NOT EXISTS "${XIT_OBJC_RUNTIME_LIBRARY}")
-    message(FATAL_ERROR "Clang could not locate the Objective-C runtime library")
+    find_program(XIT_GCC_EXECUTABLE NAMES gcc)
+    if(XIT_GCC_EXECUTABLE)
+      execute_process(
+        COMMAND "${XIT_GCC_EXECUTABLE}" -print-file-name=libobjc.so
+        OUTPUT_VARIABLE XIT_OBJC_RUNTIME_LIBRARY
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND_ERROR_IS_FATAL ANY)
+    endif()
+  endif()
+
+  if(NOT IS_ABSOLUTE "${XIT_OBJC_RUNTIME_LIBRARY}" OR NOT EXISTS "${XIT_OBJC_RUNTIME_LIBRARY}")
+    message(FATAL_ERROR "The Objective-C runtime library could not be located")
   endif()
 endif()
 
