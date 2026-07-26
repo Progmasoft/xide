@@ -1,0 +1,21 @@
+SPDX-FileCopyrightText: 2026 Leitwolf <xs-lang.chess031@slmails.com>
+SPDX-License-Identifier: MPL-2.0
+
+Xide third-party notices
+========================
+
+Gradle Wrapper
+--------------
+
+The Gradle Wrapper launcher files and JAR are generated from Gradle 9.6.1.
+Gradle is licensed under the Apache License 2.0:
+https://github.com/gradle/gradle/blob/master/LICENSE
+
+JUnit
+-----
+
+Tests use JUnit 6.1.2 from the JUnit project. JUnit is licensed under the
+Eclipse Public License 2.0:
+https://github.com/junit-team/junit-framework/blob/main/LICENSE.md
+
+These notices do not change the MPL-2.0 license of Xide source files.
