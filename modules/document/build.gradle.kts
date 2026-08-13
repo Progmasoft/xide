@@ -5,6 +5,7 @@
 
 plugins {
     `java-library`
+    kotlin("jvm")
 }
 
 java {
@@ -17,14 +18,20 @@ java {
 }
 
 dependencies {
-    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(kotlin("test"))
 }
 
 tasks.withType<JavaCompile>().configureEach {
     options.release = 25
     options.encoding = "UTF-8"
     options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
+}
+
+kotlin {
+    jvmToolchain(25)
+    compilerOptions {
+        allWarningsAsErrors = true
+    }
 }
 
 tasks.withType<Test>().configureEach {

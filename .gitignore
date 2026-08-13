@@ -7,4 +7,5 @@
 build/
 out/
 **/build/
+**/bin/
 compile_commands.json

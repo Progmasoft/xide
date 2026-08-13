@@ -1,68 +1,75 @@
 <!--
-SPDX-FileCopyrightText: 2026 Leitwolf <xs-lang.chess031@slmails.com>
+SPDX-FileCopyrightText: 2026 Leitwolf <support@xsharp-lang.xyz>
 SPDX-License-Identifier: MPL-2.0
 -->
 
 # Xide
 
-Xide is the native integrated development environment for X#. The project is intentionally in its earliest foundation
-stage; it is not ready for daily use.
+Xide is the planned Visual X# integrated development environment. The renewed application is implemented with Kotlin/JVM
+25 and Compose Multiplatform. Xide is a future project, is not a primary development focus at present, and is not ready for
+daily use. Current work is limited to small foundation slices that keep the intended architecture coherent.
 
 ## Architecture
 
-- The IDE, project model, editor model, language services, indexing, extension host, and commands use Java 25.
-- XIT (Xide Toolkit) will provide the native widget, layout, input, accessibility, and rendering layers in
-  Objective-C23.
-- Java and XIT will communicate through a narrow, versioned C ABI exposed to Java through FFM.
-- XIT is purpose-built for Xide. It does not use GTK, Qt, Tauri, Electron, Skia, or a browser runtime.
+The application shell, editor integration, project model, language services, indexing, commands, settings, and extension
+host are Kotlin/JVM components. Compose Multiplatform owns the desktop UI. Xide uses a suitable JDK installed on the system;
+the Xide distribution does not bundle a JDK.
 
-Planned platform backends use Metal/Core Text on macOS, native Wayland and native X11 through XCB on Linux, and
-Win32/D3D11/DirectWrite on Windows. The Linux renderer selects an OpenGL 4.5 core context when supported and otherwise
-uses OpenGL 4.2 core. It does not route the Wayland backend through XWayland.
+Built-in language support is prioritized in this order:
 
-Xide's built-in language priority is X#, Java, Swift, Kotlin/JVM, Objective-C, Objective-C++, C++, and C, in that order.
-Xide will integrate with `xs`, SwiftPM, Gradle, CMake, and Conan. Languages outside this list, including Rust, belong to
-community extensions rather than the built-in IDE; therefore Xide does not plan an official Cargo integration.
+1. Visual X#
+2. Kotlin
+3. Java
+4. Groovy
+5. Python
 
-XIT is the language-independent native toolkit used by Xide. It does not own language support or build-system
-integration.
+Extensions are Kotlin/JVM JARs. They are loaded from the platform-specific extension directory:
 
-## Current slice
+- Windows: `%LOCALAPPDATA%\Xide\Extensions\`
+- Linux and macOS: `$HOME/.xide/Extensions/`
 
-The first `xide-document` module provides a small UTF-16-aware document snapshot model:
+The previous Objective-C XIT experiment remains in the repository only as historical implementation material. It is not
+the renewed application toolkit or the architectural direction for new Xide code.
 
-- immutable, versioned snapshots;
-- validated offset ranges and text edits;
-- line/column conversion using Java and LSP-compatible UTF-16 code units;
+## Current foundation
+
+The `xide-document` module is the first renewed Kotlin/JVM 25 component. It provides:
+
+- immutable, versioned document snapshots;
+- validated UTF-16 offset ranges and text edits;
+- LF, CRLF, and CR-aware line/column conversion;
+- supplementary-character handling compatible with JVM and LSP UTF-16 coordinates; and
 - stale-version protection for concurrent editor consumers.
 
-The first XIT slice provides a versioned C ABI runtime probe and an Objective-C23 X11-native presentation surface on
-Linux. XCB owns the native window and event loop; EGL creates an OpenGL core context; XIT clears and presents a black
-frame. GNUstep Base is used by the runtime probe, not as a GUI toolkit. The public backend boundary reserves a separate
-Wayland-native implementation without silently falling back to X11.
+Its API uses the `org.progmasoft.xide.document` package. The next application slices will build the Compose desktop shell,
+settings loader, and extension host around this Kotlin foundation.
 
-No widget system, layout engine, plugin API, or language server is claimed yet.
+## Settings
 
-## Build
+User settings are Kotlin scripts named `Settings.xide.kts`:
 
-Xide requires JDK 25. Use the pinned Gradle wrapper:
+- Windows: `%APPDATA%\Xide\User\Settings.xide.kts`
+- Linux and macOS: `$HOME/.config/Xide/User/Settings.xide.kts`
+
+The renewed settings model covers appearance, editor behavior, and terminal typography. A settings file is optional; Xide
+uses built-in defaults for values that are not configured.
+
+## Installation
+
+Xide installation and updates are managed by ProgmaIDEs Toolbox. Install the toolbox globally with Visual X#:
 
 ```text
-./gradlew check
+vxs install -Global Progmasoft.IdeToolbox
 ```
 
-Build the current Linux XIT slice with Clang, LLD, Ninja, GNUstep Base, XCB, EGL, and OpenGL:
+Open ProgmaIDEs Toolbox and install Xide from there. Automatic updates belong to Toolbox rather than to the Xide process.
+
+## Development
+
+JDK 25 is required. Run the document foundation checks with the Gradle wrapper:
 
 ```text
-cmake --preset clang-debug -S xit
-cmake --build xit/build/clang-debug
-ctest --test-dir xit/build/clang-debug --output-on-failure
-```
-
-Run the first native X11 surface:
-
-```text
-xit/build/clang-debug/xit_black_surface
+gradlew.bat check
 ```
 
 ## License

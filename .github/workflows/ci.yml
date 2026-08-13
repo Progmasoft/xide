@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  java:
+  kotlin-foundation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -23,7 +23,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew check
 
-  xit-linux:
+  historical-xit-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

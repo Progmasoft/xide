@@ -5,11 +5,12 @@
 
 plugins {
     base
+    kotlin("jvm") version "2.4.10" apply false
 }
 
 allprojects {
-    group = "org.xsslang.xide"
-    version = "0.0.1"
+    group = "org.progmasoft.xide"
+    version = "0.1.0"
 
     repositories {
         mavenCentral()
