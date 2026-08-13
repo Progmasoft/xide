@@ -21,7 +21,9 @@ jobs:
           distribution: temurin
           java-version: "25"
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew check
+      # Windows checkouts do not preserve the Unix executable bit reliably. Invoke
+      # the pinned wrapper through Bash so CI depends on its content, not NTFS mode.
+      - run: bash ./gradlew check
 
   historical-xit-linux:
     runs-on: ubuntu-latest
