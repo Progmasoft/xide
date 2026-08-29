@@ -1,6 +1,6 @@
 <!--
-SPDX-FileCopyrightText: 2026 Leitwolf <support@xsharp-lang.xyz>
-SPDX-License-Identifier: MPL-2.0
+SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0
 -->
 
 # Xide
@@ -41,7 +41,7 @@ The `xide-document` module is the first renewed Kotlin/JVM 25 component. It prov
 - supplementary-character handling compatible with JVM and LSP UTF-16 coordinates; and
 - stale-version protection for concurrent editor consumers.
 
-Its API uses the `org.progmasoft.xide.document` package. The next application slices will build the Compose desktop shell,
+Its API uses the `com.progmasoft.xide.document` package. The next application slices will build the Compose desktop shell,
 settings loader, and extension host around this Kotlin foundation.
 
 ## Settings
@@ -74,4 +74,8 @@ gradlew.bat check
 
 ## License
 
-Xide is licensed under the Mozilla Public License 2.0.
+Xide is licensed under `MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0`. The exception permits static and dynamic
+linking with independent components under licenses of their choice, including proprietary licenses, while Xide files
+and modifications to those files remain subject to MPL-2.0. See `LICENSE.txt` and
+`LICENSES/AdditionRef-Progmasoft-Exception-1.0.txt`. The separate Progmasoft Patent Grant, Version 1.0, is documented in
+`PATENTS` and `LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.0.txt`.

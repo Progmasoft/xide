@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2026 Leitwolf <xs-lang.chess031@slmails.com>
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
   message(FATAL_ERROR "The first XIT runtime slice currently supports Linux with GNUstep Base")

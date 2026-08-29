@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: 2026 Leitwolf <xs-lang.chess031@slmails.com>
- * SPDX-License-Identifier: MPL-2.0
+ * SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+ * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0
  */
 
 plugins {
@@ -9,7 +9,7 @@ plugins {
 }
 
 allprojects {
-    group = "org.progmasoft.xide"
+    group = "com.progmasoft.xide"
     version = "0.1.0"
 
     repositories {

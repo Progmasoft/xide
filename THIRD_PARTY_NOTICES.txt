@@ -1,5 +1,5 @@
-SPDX-FileCopyrightText: 2026 Leitwolf <xs-lang.chess031@slmails.com>
-SPDX-License-Identifier: MPL-2.0
+SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0
 
 Xide third-party notices
 ========================
@@ -18,7 +18,8 @@ Tests use JUnit 6.1.2 from the JUnit project. JUnit is licensed under the
 Eclipse Public License 2.0:
 https://github.com/junit-team/junit-framework/blob/main/LICENSE.md
 
-These notices do not change the MPL-2.0 license of Xide source files.
+These notices do not change the `MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0` license expression used by Xide
+source files.
 
 GNUstep Base
 ------------

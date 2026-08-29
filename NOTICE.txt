@@ -1,0 +1,6 @@
+Copyright 2026 Progmasoft <support@progmasoft.com>
+
+Project-owned source code is licensed under MPL-2.0 with the Progmasoft Linking Exception, Version 1.0, and the
+Progmasoft Patent Grant, Version 1.0. See LICENSE.txt, PATENTS, and the custom additions in LICENSES/.
+
+Third-party material remains under its respective license. See THIRD_PARTY_NOTICES.txt.

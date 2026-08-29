@@ -1,9 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2026 Leitwolf <support@xsharp-lang.xyz>
- * SPDX-License-Identifier: MPL-2.0
+ * SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+ * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0
  */
 
-package org.progmasoft.xide.document
+package com.progmasoft.xide.document
 
 /** Maps offsets without converting the JVM's native UTF-16 string representation. */
 class LineMap private constructor(

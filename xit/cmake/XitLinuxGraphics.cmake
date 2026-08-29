@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2026 Leitwolf <xs-lang.chess031@slmails.com>
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0
 
 find_path(XIT_XCB_INCLUDE_DIR xcb/xcb.h REQUIRED)
 find_library(XIT_XCB_LIBRARY NAMES xcb REQUIRED)
