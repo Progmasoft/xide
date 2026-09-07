@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0
+SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 -->
 
 # Xide
@@ -74,8 +74,8 @@ gradlew.bat check
 
 ## License
 
-Xide is licensed under `MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.0`. The exception permits static and dynamic
+Xide is licensed under `MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1`. The exception permits static and dynamic
 linking with independent components under licenses of their choice, including proprietary licenses, while Xide files
 and modifications to those files remain subject to MPL-2.0. See `LICENSE.txt` and
-`LICENSES/AdditionRef-Progmasoft-Exception-1.0.txt`. The separate Progmasoft Patent Grant, Version 1.0, is documented in
-`PATENTS` and `LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.0.txt`.
+`LICENSES/AdditionRef-Progmasoft-Exception-1.1.txt`. The separate Progmasoft Patent Grant, Version 1.1, is documented in
+`PATENTS` and `LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.1.txt`.
