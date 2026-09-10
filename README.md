@@ -12,8 +12,8 @@ daily use. Current work is limited to small foundation slices that keep the inte
 ## Architecture
 
 The application shell, editor integration, project model, language services, indexing, commands, settings, and extension
-host are Kotlin/JVM components. Compose Multiplatform owns the desktop UI. Xide uses a suitable JDK installed on the system;
-the Xide distribution does not bundle a JDK.
+host are Kotlin/JVM components. Compose Multiplatform owns the desktop UI. Development uses a system JDK 25, while the
+native Xide distribution contains a minimized Java runtime image rather than requiring users to install a full JDK.
 
 Built-in language support is prioritized in this order:
 
@@ -33,7 +33,7 @@ the renewed application toolkit or the architectural direction for new Xide code
 
 ## Current foundation
 
-The `xide-document` module is the first renewed Kotlin/JVM 25 component. It provides:
+The renewed Kotlin/JVM foundation currently has two modules. `xide-document` provides:
 
 - immutable, versioned document snapshots;
 - validated UTF-16 offset ranges and text edits;
@@ -41,8 +41,10 @@ The `xide-document` module is the first renewed Kotlin/JVM 25 component. It prov
 - supplementary-character handling compatible with JVM and LSP UTF-16 coordinates; and
 - stale-version protection for concurrent editor consumers.
 
-Its API uses the `com.progmasoft.xide.document` package. The next application slices will build the Compose desktop shell,
-settings loader, and extension host around this Kotlin foundation.
+Its API uses the `com.progmasoft.xide.document` package. `xide-app` is the first real Compose desktop slice: it owns an
+application window, open-editor navigation, Visual X# scratch documents, a text editor, and a status bar. UI updates pass
+through the versioned document API rather than maintaining a second mutable text model. Settings loading, filesystem-backed
+open/save commands, and the extension host remain future slices.
 
 ## Settings
 
@@ -66,10 +68,16 @@ Open ProgmaIDEs Toolbox and install Xide from there. Automatic updates belong to
 
 ## Development
 
-JDK 25 is required. Run the document foundation checks with the Gradle wrapper:
+JDK 25 is required. Run all Kotlin, document, and Compose application checks with the Gradle wrapper:
 
 ```text
 gradlew.bat check
+```
+
+Launch the current desktop shell during development with:
+
+```text
+gradlew.bat :modules:app:run
 ```
 
 ## License
