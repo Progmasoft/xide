@@ -12,6 +12,14 @@ import kotlin.test.assertFailsWith
 
 class TextDocumentTest {
   @Test
+  fun rejectsRelativeDocumentUris() {
+    val relativeUri = URI.create("workspace/Main.vxs")
+
+    assertFailsWith<IllegalArgumentException> { DocumentSnapshot(relativeUri, 0, "") }
+    assertFailsWith<IllegalArgumentException> { TextDocument(relativeUri, "") }
+  }
+
+  @Test
   fun editsCreateNewImmutableVersions() {
     val document = TextDocument(URI.create("file:///workspace/Main.vxs"), "class Main {}")
     val original = document.snapshot()

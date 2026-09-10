@@ -10,6 +10,7 @@ import java.net.URI
 /** An immutable document version safe to share with background language services. */
 data class DocumentSnapshot(val uri: URI, val version: Long, val text: String) {
   init {
+    require(uri.isAbsolute) { "uri must be absolute" }
     require(version >= 0) { "version must not be negative" }
   }
 
