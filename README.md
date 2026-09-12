@@ -33,7 +33,7 @@ the renewed application toolkit or the architectural direction for new Xide code
 
 ## Current foundation
 
-The renewed Kotlin/JVM foundation currently has two modules. `xide-document` provides:
+The renewed Kotlin/JVM foundation currently has three modules. `xide-document` provides:
 
 - immutable, versioned document snapshots;
 - validated UTF-16 offset ranges and text edits;
@@ -41,10 +41,15 @@ The renewed Kotlin/JVM foundation currently has two modules. `xide-document` pro
 - supplementary-character handling compatible with JVM and LSP UTF-16 coordinates; and
 - stale-version protection for concurrent editor consumers.
 
-Its API uses the `com.progmasoft.xide.document` package. `xide-app` is the first real Compose desktop slice: it owns an
-application window, open-editor navigation, Visual X# scratch documents, a text editor, and a status bar. UI updates pass
-through the versioned document API rather than maintaining a second mutable text model. Settings loading, filesystem-backed
-open/save commands, and the extension host remain future slices.
+`xide-compiler` consumes the bounded VXDG v1 structured diagnostic protocol and invokes the single public `vxs` driver.
+Every request uses a unique temporary side channel, drains process output concurrently, enforces a timeout, and refuses to
+reconstruct diagnostics by scraping terminal text. `xide-app` binds results to the exact document version that was checked,
+discards stale asynchronous results after edits, and renders accepted records in its problems surface.
+
+The application module also owns the first real Compose desktop slice: an application window, open-editor navigation,
+Visual X# scratch documents, a text editor, and a status bar. UI updates pass through the versioned document API rather
+than maintaining a second mutable text model. Settings loading, filesystem-backed open/save commands, check command wiring,
+and the extension host remain future slices.
 
 ## Settings
 

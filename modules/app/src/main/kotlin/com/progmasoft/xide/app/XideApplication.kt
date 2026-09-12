@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -35,6 +36,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.progmasoft.xide.compiler.DiagnosticSeverity
 
 private val XideBackground = Color(0xFF151321)
 private val XidePanel = Color(0xFF201D2E)
@@ -60,9 +62,35 @@ fun XideApplication(session: WorkspaceSession = remember { WorkspaceSession() })
             document = workspace.activeDocument,
             onTextChange = { text -> workspace = session.replaceActiveText(text) },
           )
+          DiagnosticsPanel(workspace.activeDocument)
         }
       }
       StatusBar(workspace)
+    }
+  }
+}
+
+@Composable
+private fun DiagnosticsPanel(document: OpenDocument?) {
+  val diagnostics = document?.diagnostics?.document?.diagnostics.orEmpty()
+  if (diagnostics.isEmpty()) return
+
+  Column(
+    Modifier.fillMaxWidth().heightIn(max = 180.dp).background(XidePanel).padding(10.dp),
+    verticalArrangement = Arrangement.spacedBy(4.dp),
+  ) {
+    Text("PROBLEMS (${diagnostics.size})", color = XideMutedText, fontSize = 11.sp)
+    diagnostics.forEach { diagnostic ->
+      val marker =
+        when (diagnostic.severity) {
+          DiagnosticSeverity.ERROR -> "Error"
+          DiagnosticSeverity.WARNING -> "Warning"
+          DiagnosticSeverity.INFORMATION -> "Information"
+          DiagnosticSeverity.HINT -> "Hint"
+        }
+      val location = diagnostic.primaryLocation?.range?.start
+      val suffix = location?.let { "  ${it.line + 1u}:${it.column + 1u}" }.orEmpty()
+      Text("$marker ${diagnostic.code}$suffix  ${diagnostic.message}", color = XideText, fontSize = 12.sp)
     }
   }
 }

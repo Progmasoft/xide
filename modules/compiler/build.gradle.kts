@@ -5,8 +5,6 @@
 
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jetbrains.compose")
 }
 
 java {
@@ -23,11 +21,6 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":modules:compiler"))
-    implementation(project(":modules:document"))
-    implementation(compose.desktop.currentOs)
-    implementation("org.jetbrains.compose.material:material:1.11.0")
-
     testImplementation(kotlin("test"))
 }
 
@@ -39,17 +32,4 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-}
-
-compose.desktop {
-    application {
-        mainClass = "com.progmasoft.xide.app.MainKt"
-
-        nativeDistributions {
-            packageName = "Xide"
-            packageVersion = project.version.toString()
-            description = "Visual X# integrated development environment"
-            vendor = "Progmasoft"
-        }
-    }
 }

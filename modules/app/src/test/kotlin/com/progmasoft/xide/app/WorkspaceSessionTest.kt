@@ -5,6 +5,7 @@
 
 package com.progmasoft.xide.app
 
+import com.progmasoft.xide.compiler.DiagnosticDocument
 import com.progmasoft.xide.document.StaleDocumentVersionException
 import java.net.URI
 import kotlin.test.Test
@@ -84,5 +85,56 @@ class WorkspaceSessionTest {
 
     assertFailsWith<IllegalArgumentException> { WorkspaceSnapshot(listOf(first), 1) }
     assertFailsWith<IllegalArgumentException> { WorkspaceSnapshot(listOf(first, first), 0) }
+  }
+
+  @Test
+  fun publishesDiagnosticsOnlyForTheRequestedCurrentVersion() {
+    val session = WorkspaceSession()
+    val uri = URI.create("file:///workspace/Main.vxs")
+    val opened = session.open(uri, "source")
+    val version = opened.activeDocument!!.snapshot.version
+    val diagnostics = DiagnosticDocument(emptyList())
+
+    assertTrue(session.publishDiagnostics(uri, version, diagnostics))
+    assertEquals(version, session.snapshot().activeDocument?.diagnostics?.documentVersion)
+    assertEquals(diagnostics, session.snapshot().activeDocument?.diagnostics?.document)
+    assertTrue(!session.publishDiagnostics(uri, version + 1, diagnostics))
+  }
+
+  @Test
+  fun editingInvalidatesPublishedDiagnostics() {
+    val session = WorkspaceSession()
+    val uri = URI.create("file:///workspace/Main.vxs")
+    val opened = session.open(uri, "source")
+    val version = opened.activeDocument!!.snapshot.version
+    session.publishDiagnostics(uri, version, DiagnosticDocument(emptyList()))
+
+    val changed = session.replaceActiveText(version, "changed")
+
+    assertEquals(null, changed.activeDocument?.diagnostics)
+  }
+
+  @Test
+  fun staleAndUnknownDiagnosticResultsAreDiscarded() {
+    val session = WorkspaceSession()
+    val uri = URI.create("untitled:Main.vxs")
+    session.open(uri, "source")
+    session.replaceActiveText("changed")
+
+    assertTrue(!session.publishDiagnostics(uri, 0, DiagnosticDocument(emptyList())))
+    assertTrue(!session.publishDiagnostics(URI.create("untitled:Missing.vxs"), 0, DiagnosticDocument(emptyList())))
+    assertEquals(null, session.snapshot().activeDocument?.diagnostics)
+  }
+
+  @Test
+  fun clearingDiagnosticsReportsWhetherStateChanged() {
+    val session = WorkspaceSession()
+    val uri = URI.create("untitled:Main.vxs")
+    val opened = session.open(uri, "source")
+    session.publishDiagnostics(uri, opened.activeDocument!!.snapshot.version, DiagnosticDocument(emptyList()))
+
+    assertTrue(session.clearDiagnostics(uri))
+    assertTrue(!session.clearDiagnostics(uri))
+    assertTrue(!session.clearDiagnostics(URI.create("untitled:Missing.vxs")))
   }
 }
