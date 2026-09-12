@@ -8,6 +8,8 @@ package com.progmasoft.xide.app
 import com.progmasoft.xide.compiler.DiagnosticDocument
 import com.progmasoft.xide.document.StaleDocumentVersionException
 import java.net.URI
+import java.nio.file.Files
+import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -136,5 +138,77 @@ class WorkspaceSessionTest {
     assertTrue(session.clearDiagnostics(uri))
     assertTrue(!session.clearDiagnostics(uri))
     assertTrue(!session.clearDiagnostics(URI.create("untitled:Missing.vxs")))
+  }
+
+  @Test
+  fun opensPhysicalSourceFilesAsCleanDocuments() {
+    withTemporaryDirectory { directory ->
+      val source = directory.resolve("Main.vxs")
+      Files.writeString(source, "namespace Example;\n")
+
+      val workspace = WorkspaceSession().openFile(source)
+
+      assertEquals(source.toAbsolutePath(), workspace.activeDocument?.filePath)
+      assertEquals("namespace Example;\n", workspace.activeDocument?.snapshot?.text)
+      assertTrue(workspace.activeDocument?.isDirty == false)
+    }
+  }
+
+  @Test
+  fun savesEditedFilesAndMarksThePersistedVersionClean() {
+    withTemporaryDirectory { directory ->
+      val source = directory.resolve("Main.vxs")
+      Files.writeString(source, "old")
+      val session = WorkspaceSession()
+      session.openFile(source)
+      assertTrue(session.replaceActiveText("new").activeDocument!!.isDirty)
+
+      val saved = session.saveActive()
+
+      assertEquals("new", Files.readString(source))
+      assertTrue(!saved.activeDocument!!.isDirty)
+      assertEquals(saved.activeDocument!!.snapshot.version, saved.activeDocument!!.savedVersion)
+    }
+  }
+
+  @Test
+  fun savingAScratchDocumentAssignsItsPhysicalIdentity() {
+    withTemporaryDirectory { directory ->
+      val destination = directory.resolve("Program.vxs")
+      val session = WorkspaceSession()
+      session.newScratch()
+
+      val saved = session.saveActive(destination)
+
+      assertEquals(destination.toUri(), saved.activeDocument?.snapshot?.uri)
+      assertEquals(destination.toAbsolutePath(), saved.activeDocument?.filePath)
+      assertEquals("Program.vxs", saved.activeDocument?.title)
+      assertTrue(Files.readString(destination).contains("public static void Main()"))
+    }
+  }
+
+  @Test
+  fun rejectsWrongCaseAndNonVisualXSharpSourceExtensions() {
+    withTemporaryDirectory { directory ->
+      val uppercase = directory.resolve("Main.VXS")
+      val text = directory.resolve("Main.txt")
+      Files.writeString(uppercase, "source")
+      Files.writeString(text, "source")
+      val session = WorkspaceSession()
+
+      assertFailsWith<IllegalArgumentException> { session.openFile(uppercase) }
+      assertFailsWith<IllegalArgumentException> { session.openFile(text) }
+      session.newScratch()
+      assertFailsWith<IllegalArgumentException> { session.saveActive(text) }
+    }
+  }
+
+  private fun withTemporaryDirectory(action: (java.nio.file.Path) -> Unit) {
+    val directory = createTempDirectory("xide-workspace-")
+    try {
+      action(directory)
+    } finally {
+      directory.toFile().deleteRecursively()
+    }
   }
 }

@@ -46,10 +46,11 @@ Every request uses a unique temporary side channel, drains process output concur
 reconstruct diagnostics by scraping terminal text. `xide-app` binds results to the exact document version that was checked,
 discards stale asynchronous results after edits, and renders accepted records in its problems surface.
 
-The application module also owns the first real Compose desktop slice: an application window, open-editor navigation,
-Visual X# scratch documents, a text editor, and a status bar. UI updates pass through the versioned document API rather
-than maintaining a second mutable text model. Settings loading, filesystem-backed open/save commands, check command wiring,
-and the extension host remain future slices.
+The application module also owns the first real Compose desktop slice: an application window, native `.vxs` open/save
+dialogs, atomic filesystem saves, dirty editor indicators, open-editor navigation, scratch documents, a text editor,
+compiler Check action, Problems surface, and an activity-aware status bar. UI updates pass through the versioned document
+API rather than maintaining a second mutable text model. Settings loading, project navigation, diagnostic navigation,
+quick-fix application, and the extension host remain future slices.
 
 ## Settings
 

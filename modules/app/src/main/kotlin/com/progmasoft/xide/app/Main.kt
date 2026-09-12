@@ -14,6 +14,6 @@ fun main() = application {
     title = "Xide",
   ) {
     window.minimumSize = java.awt.Dimension(720, 480)
-    XideApplication()
+    XideApplication(window)
   }
 }

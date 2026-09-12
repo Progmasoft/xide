@@ -11,6 +11,11 @@ import com.progmasoft.xide.document.TextDocument
 import com.progmasoft.xide.document.TextEdit
 import com.progmasoft.xide.document.TextRange
 import java.net.URI
+import java.nio.charset.StandardCharsets
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 
 /** Immutable view of the documents that the desktop shell may render. */
 data class WorkspaceSnapshot(
@@ -35,7 +40,12 @@ data class OpenDocument(
   val title: String,
   val snapshot: DocumentSnapshot,
   val diagnostics: VersionedDiagnostics? = null,
-)
+  val savedVersion: Long? = null,
+  val filePath: Path? = null,
+) {
+  val isDirty: Boolean
+    get() = savedVersion != snapshot.version
+}
 
 /** Compiler output bound to the exact immutable document snapshot that produced it. */
 data class VersionedDiagnostics(
@@ -51,9 +61,11 @@ data class VersionedDiagnostics(
  */
 class WorkspaceSession {
   private data class Entry(
-    val title: String,
-    val document: TextDocument,
+    var title: String,
+    var document: TextDocument,
     var diagnostics: VersionedDiagnostics? = null,
+    var savedVersion: Long? = null,
+    var filePath: Path? = null,
   )
 
   private val entries = mutableListOf<Entry>()
@@ -63,7 +75,10 @@ class WorkspaceSession {
   @Synchronized
   fun snapshot(): WorkspaceSnapshot =
     WorkspaceSnapshot(
-      documents = entries.map { OpenDocument(it.title, it.document.snapshot(), it.diagnostics) },
+      documents =
+        entries.map {
+          OpenDocument(it.title, it.document.snapshot(), it.diagnostics, it.savedVersion, it.filePath)
+        },
       activeIndex = activeIndex,
     )
 
@@ -77,7 +92,8 @@ class WorkspaceSession {
       return snapshot()
     }
 
-    entries += Entry(titleFor(uri), TextDocument(uri, text))
+    val path = if (uri.scheme.equals("file", ignoreCase = true)) Path.of(uri).toAbsolutePath().normalize() else null
+    entries += Entry(titleFor(uri), TextDocument(uri, text), savedVersion = path?.let { 0L }, filePath = path)
     activeIndex = entries.lastIndex
     return snapshot()
   }
@@ -87,6 +103,45 @@ class WorkspaceSession {
   fun newScratch(): WorkspaceSnapshot {
     val number = nextScratchNumber++
     return open(URI.create("untitled:Xide-$number.vxs"), defaultScratchText(number))
+  }
+
+  /** Loads a physical Visual X# source file without tying namespace identity to its directory layout. */
+  @Synchronized
+  fun openFile(path: Path): WorkspaceSnapshot {
+    val absolute = validateSourcePath(path, mustExist = true)
+    return open(absolute.toUri(), Files.readString(absolute, StandardCharsets.UTF_8))
+  }
+
+  /**
+   * Saves the active snapshot through a sibling temporary file and atomically replaces the destination when supported.
+   * Scratch documents acquire the destination URI only after the write succeeds.
+   */
+  @Synchronized
+  fun saveActive(destination: Path? = null): WorkspaceSnapshot {
+    val entry = activeEntry()
+    val snapshot = entry.document.snapshot()
+    val target = validateSourcePath(destination ?: entry.filePath ?: error("unsaved document requires a destination"), false)
+    Files.createDirectories(target.parent)
+    val temporary = Files.createTempFile(target.parent, ".${target.fileName}.", ".xide-save")
+    try {
+      Files.writeString(temporary, snapshot.text, StandardCharsets.UTF_8)
+      try {
+        Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+      } catch (_: AtomicMoveNotSupportedException) {
+        Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
+      }
+
+      if (entry.filePath != target) {
+        entry.document = TextDocument(target.toUri(), snapshot.text)
+        entry.title = target.fileName.toString()
+        entry.diagnostics = null
+      }
+      entry.filePath = target
+      entry.savedVersion = entry.document.snapshot().version
+      return snapshot()
+    } finally {
+      Files.deleteIfExists(temporary)
+    }
   }
 
   @Synchronized
@@ -150,6 +205,14 @@ class WorkspaceSession {
   private fun titleFor(uri: URI): String {
     val candidate = uri.path?.substringAfterLast('/')?.takeIf(String::isNotBlank)
     return candidate ?: uri.schemeSpecificPart.substringAfterLast('/').ifBlank { "Untitled.vxs" }
+  }
+
+  private fun validateSourcePath(path: Path, mustExist: Boolean): Path {
+    val absolute = path.toAbsolutePath().normalize()
+    require(absolute.fileName.toString().endsWith(".vxs")) { "Visual X# source files must use the exact .vxs extension" }
+    if (mustExist) require(Files.isRegularFile(absolute)) { "source path must identify a regular file" }
+    require(absolute.parent != null) { "source path must have a parent directory" }
+    return absolute
   }
 
   private fun defaultScratchText(number: Int): String =
