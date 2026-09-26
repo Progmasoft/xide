@@ -4,7 +4,20 @@
  */
 
 plugins {
+    jacoco
     kotlin("jvm")
+}
+
+jacoco {
+    toolVersion = "0.8.15"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(false)
+    }
 }
 
 java {
