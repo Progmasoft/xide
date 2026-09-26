@@ -23,8 +23,6 @@ jobs:
         include:
           - language: actions
             build_mode: none
-          - language: c-cpp
-            build_mode: none
           - language: java-kotlin
             build_mode: manual
     steps:
@@ -44,8 +42,7 @@ jobs:
           queries: security-extended
       - name: Build Kotlin modules for extraction
         if: matrix.language == 'java-kotlin'
-        run: bash ./gradlew classes
+        run: bash ./gradlew classes --rerun-tasks --no-build-cache --no-configuration-cache
       - uses: github/codeql-action/analyze@7999b86c43a865dc79d8923397f35af22de63401 # v4
         with:
           category: /language:${{ matrix.language }}
-
