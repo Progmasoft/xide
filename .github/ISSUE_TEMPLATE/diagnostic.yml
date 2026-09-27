@@ -1,0 +1,58 @@
+name: Diagnostic report
+description: Report a reproducible Xide editor, project, or language-tool integration failure.
+title: "[Diagnostic]: "
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Include a minimal reproduction and relevant logs. Remove project secrets, access tokens, personal data,
+        and private source before submitting.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected area
+      options:
+        - Editor or Compose UI
+        - Project loading or build
+        - Visual X# language integration
+        - Settings or persistence
+        - Plugin or IDE integration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Failure summary
+      description: State what failed and provide the first visible error or diagnostic.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: List ordered steps and attach a minimal project or source sample when possible.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS/version, Xide version or commit, and IDE/runtime version.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant diagnostics
+      description: Include redacted stack traces and IDE logs; never paste tokens or credentials.
+      render: text
+    validations:
+      required: true
