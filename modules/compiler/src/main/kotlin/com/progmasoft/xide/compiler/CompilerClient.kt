@@ -6,6 +6,8 @@
 package com.progmasoft.xide.compiler
 
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -60,9 +62,10 @@ data class CompilerProcessResult(
 /**
  * Invokes the single public `vxs` driver and consumes diagnostics from its private protocol file.
  *
- * The client never parses terminal text. It creates a unique side-channel path for each request, removes the empty
- * placeholder before launch, and deletes the protocol file in a `finally` block. A crashed compiler therefore cannot
- * make Xide consume a previous request's diagnostics.
+ * The client never parses terminal text. It reserves a unique side-channel file for each request and keeps that file
+ * in place while the compiler writes it, avoiding a name-reuse window between temporary-file creation and process
+ * launch. The protocol file is deleted in a `finally` block, so a crashed compiler cannot make Xide consume a previous
+ * request's diagnostics.
  */
 class VisualXSharpCompilerClient(
   private val runner: CompilerProcessRunner = SystemCompilerProcessRunner(),
@@ -73,7 +76,6 @@ class VisualXSharpCompilerClient(
     require(Files.isDirectory(request.workingDirectory)) { "compiler working directory must exist" }
 
     val diagnosticsPath = Files.createTempFile("xide-diagnostics-", ".vxdg")
-    Files.deleteIfExists(diagnosticsPath)
     try {
       val invocation =
         CompilerInvocation(
@@ -102,6 +104,7 @@ class VisualXSharpCompilerClient(
       throw CompilerClientException("compiler did not produce a structured diagnostic document")
     }
     val size = Files.size(path)
+    if (size == 0L && process.timedOut) return DiagnosticDocument(emptyList())
     if (size > limits.maximumWireBytes) {
       throw CompilerClientException("compiler diagnostic document exceeds ${limits.maximumWireBytes} bytes")
     }
@@ -136,9 +139,16 @@ class SystemCompilerProcessRunner(
   }
 
   override fun run(invocation: CompilerInvocation): CompilerProcessResult {
+    require(invocation.command.isNotEmpty()) { "compiler invocation must contain an executable" }
     val builder = ProcessBuilder(invocation.command)
     builder.directory(invocation.workingDirectory.toFile())
-    builder.environment().putAll(invocation.environment)
+    val environment = builder.environment()
+    environment.putAll(invocation.environment)
+    val command = invocation.command.toMutableList()
+    val pathValue = environment.entries.firstOrNull { it.key.equals("PATH", ignoreCase = true) }?.value
+    command[0] =
+      resolveCompilerExecutable(command[0], invocation.workingDirectory, pathValue).toString()
+    builder.command(command)
     val process = builder.start()
     process.outputStream.close()
 
@@ -149,9 +159,7 @@ class SystemCompilerProcessRunner(
 
     val completed = process.waitFor(invocation.timeout.toMillis(), TimeUnit.MILLISECONDS)
     if (!completed) {
-      process.destroy()
-      if (!process.waitFor(500, TimeUnit.MILLISECONDS)) process.destroyForcibly()
-      process.waitFor()
+      terminateProcessTree(process)
     }
     outputThread.join()
     errorThread.join()
@@ -164,6 +172,62 @@ class SystemCompilerProcessRunner(
       standardError = standardError.bytes(),
       timedOut = !completed,
     )
+  }
+
+  /** A timed-out compiler must not leave helpers alive or keep its inherited output pipes open. */
+  private fun terminateProcessTree(process: Process) {
+    val descendants = process.toHandle().descendants().toList().asReversed()
+    descendants.forEach { if (it.isAlive) it.destroy() }
+    process.destroy()
+    if (!process.waitFor(500, TimeUnit.MILLISECONDS)) process.destroyForcibly()
+    descendants.forEach { if (it.isAlive) it.destroyForcibly() }
+    if (process.isAlive) process.destroyForcibly()
+    process.waitFor()
+  }
+
+  /**
+   * Resolves bare tool names before setting the child working directory. In particular, Windows process creation can
+   * search the current directory for a bare executable name; a project containing `vxs.exe` must not shadow the
+   * compiler selected from the user's absolute PATH entries.
+   */
+  internal fun resolveCompilerExecutable(
+    executable: String,
+    workingDirectory: Path,
+    pathValue: String?,
+    windows: Boolean = System.getProperty("os.name").startsWith("Windows", ignoreCase = true),
+  ): Path {
+    val requested = Path.of(executable)
+    if (requested.isAbsolute) return requested.normalize()
+    if (requested.parent != null) return workingDirectory.resolve(requested).normalize()
+
+    val pathEntries = pathValue?.split(File.pathSeparatorChar).orEmpty()
+    val filename = requested.fileName.toString()
+    val hasExtension = filename.substringAfterLast('.', missingDelimiterValue = "").isNotEmpty()
+    val candidates =
+      if (windows && !hasExtension) {
+        listOf("$filename.exe", "$filename.com")
+      } else {
+        listOf(filename)
+      }
+
+    pathEntries.forEach { entry ->
+      val pathEntry = entry.trim().removeSurrounding("\"")
+      if (pathEntry.isEmpty()) return@forEach
+
+      val directory = runCatching { Path.of(pathEntry) }.getOrNull() ?: return@forEach
+      // Empty and relative PATH segments implicitly mean the working directory on some platforms. Ignore them so
+      // opening a project cannot turn its files into executable search candidates.
+      if (!directory.isAbsolute) return@forEach
+
+      candidates.forEach { candidateName ->
+        val candidate = directory.resolve(candidateName)
+        if (Files.isRegularFile(candidate) && (windows || Files.isExecutable(candidate))) {
+          return candidate.toAbsolutePath().normalize()
+        }
+      }
+    }
+
+    throw IOException("compiler executable '$executable' was not found in an absolute PATH entry")
   }
 
   private class StreamCapture(

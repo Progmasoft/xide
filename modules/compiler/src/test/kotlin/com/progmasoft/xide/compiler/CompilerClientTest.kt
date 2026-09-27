@@ -5,6 +5,7 @@
 
 package com.progmasoft.xide.compiler
 
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
@@ -21,7 +22,10 @@ class CompilerClientTest {
       var observed: CompilerInvocation? = null
       val runner = CompilerProcessRunner { invocation ->
         observed = invocation
-        Files.write(Path.of(invocation.environment.getValue("VXS_DIAGNOSTICS_FILE")), WireWriter().header(0).toByteArray())
+        val diagnosticsPath = Path.of(invocation.environment.getValue("VXS_DIAGNOSTICS_FILE"))
+        assertTrue(Files.isRegularFile(diagnosticsPath))
+        assertEquals(0L, Files.size(diagnosticsPath))
+        Files.write(diagnosticsPath, WireWriter().header(0).toByteArray())
         CompilerProcessResult(0, "checked\n".toByteArray(), byteArrayOf(), false)
       }
 
@@ -88,6 +92,31 @@ class CompilerClientTest {
       assertTrue(result.timedOut)
       assertFalse(result.succeeded)
       assertTrue(result.diagnostics.diagnostics.isEmpty())
+    }
+  }
+
+  @Test
+  fun bareCompilerLookupCannotBeShadowedByTheProjectDirectoryOrRelativePathEntries() {
+    val directory = createTempDirectory("xide-compiler-search-test-")
+    val projectDirectory = Files.createDirectories(directory.resolve("project"))
+    val toolDirectory = Files.createDirectories(directory.resolve("tools"))
+    val projectExecutable = projectDirectory.resolve("vxs.exe")
+    val pathExecutable = toolDirectory.resolve("vxs.exe")
+    try {
+      Files.writeString(projectExecutable, "project-provided executable")
+      Files.writeString(pathExecutable, "PATH-provided executable")
+
+      val resolved =
+        SystemCompilerProcessRunner().resolveCompilerExecutable(
+          executable = "vxs",
+          workingDirectory = projectDirectory,
+          pathValue = ".${File.pathSeparator}$toolDirectory",
+          windows = true,
+        )
+
+      assertEquals(pathExecutable.toAbsolutePath().normalize(), resolved)
+    } finally {
+      directory.toFile().deleteRecursively()
     }
   }
 

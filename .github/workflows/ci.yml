@@ -15,12 +15,13 @@ jobs:
   kotlin-compose-foundation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: gradle/actions/wrapper-validation@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: "25"
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
       # Windows checkouts do not preserve the Unix executable bit reliably. Invoke
       # the pinned wrapper through Bash so CI depends on its content, not NTFS mode.
       - run: bash ./gradlew check
@@ -28,9 +29,9 @@ jobs:
   historical-xit-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install CMake
-        run: python3 -m pip install --user "cmake>=3.31,<5"
+        run: python3 -m pip install --user --require-hashes --requirement requirements-ci.txt
       - name: Add user tools to PATH
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Install XIT toolchain

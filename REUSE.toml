@@ -4,7 +4,7 @@ SPDX-PackageSupplier = "Organization: Progmasoft"
 SPDX-PackageDownloadLocation = "https://github.com/Progmasoft/xide"
 
 [[annotations]]
-path = ["xit/CMakePresets.json"]
+path = ["requirements-ci.txt", "xit/CMakePresets.json"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Progmasoft <support@progmasoft.com>"
 SPDX-License-Identifier = "MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1"
