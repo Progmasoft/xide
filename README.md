@@ -28,8 +28,10 @@ Extensions are Kotlin/JVM JARs. They are loaded from the platform-specific exten
 - Windows: `%LOCALAPPDATA%\Xide\Extensions\`
 - Linux and macOS: `$HOME/.xide/Extensions/`
 
-The previous Objective-C XIT experiment remains in the repository only as historical implementation material. It is not
-the renewed application toolkit or the architectural direction for new Xide code.
+The previous Objective-C XIT experiment is preserved under `legacy/xit/` only as
+historical implementation material. It is not the renewed application toolkit,
+an active CI target, or the architectural direction for new Xide code. Current
+CodeQL extraction covers Kotlin/JVM and GitHub Actions, not this retired toolkit.
 
 ## Current foundation
 

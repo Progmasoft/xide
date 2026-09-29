@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 # SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-name: CI
+name: Kotlin Foundation
 
 on:
   push:
@@ -26,23 +26,3 @@ jobs:
       # the pinned wrapper through Bash so CI depends on its content, not NTFS mode.
       - run: bash ./gradlew check
 
-  historical-xit-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Install CMake
-        run: python3 -m pip install --user --require-hashes --requirement requirements-ci.txt
-      - name: Add user tools to PATH
-        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: Install XIT toolchain
-        run: >-
-          sudo apt-get update &&
-          sudo apt-get install --yes
-          clang clang-tidy lld ninja-build
-          libgnustep-base-dev libxcb1-dev libegl-dev libgl-dev libgl1-mesa-dri
-          xauth xvfb
-      - run: cmake --preset clang-debug -S xit
-      - run: cmake --build xit/build/clang-debug
-      - run: ctest --test-dir xit/build/clang-debug --output-on-failure
-      - name: Run X11 OpenGL surface smoke test
-        run: xvfb-run --auto-servernum xit/build/clang-debug/xit_black_surface --frames 2

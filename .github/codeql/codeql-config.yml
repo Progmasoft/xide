@@ -4,5 +4,5 @@
 name: Xide owned sources
 paths-ignore:
   - '**/build'
-  - xit/build
+  - legacy/xit
 
