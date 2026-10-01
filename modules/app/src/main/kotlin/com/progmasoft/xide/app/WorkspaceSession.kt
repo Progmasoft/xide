@@ -6,7 +6,10 @@
 package com.progmasoft.xide.app
 
 import com.progmasoft.xide.compiler.DiagnosticDocument
+import com.progmasoft.xide.compiler.SourceLocation
+import com.progmasoft.xide.compiler.SourcePosition
 import com.progmasoft.xide.document.DocumentSnapshot
+import com.progmasoft.xide.document.ScalarPosition
 import com.progmasoft.xide.document.TextDocument
 import com.progmasoft.xide.document.TextEdit
 import com.progmasoft.xide.document.TextRange
@@ -14,8 +17,11 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
+import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+
+private val WINDOWS: Boolean = System.getProperty("os.name").startsWith("Windows", ignoreCase = true)
 
 /** Immutable view of the documents that the desktop shell may render. */
 data class WorkspaceSnapshot(
@@ -51,6 +57,19 @@ data class OpenDocument(
 data class VersionedDiagnostics(
   val documentVersion: Long,
   val document: DiagnosticDocument,
+)
+
+/**
+ * An editor range that a diagnostic location resolved to.
+ *
+ * The range is only meaningful for [version] of the document at [documentIndex]; a consumer that applies it later
+ * must confirm that the version is still current.
+ */
+data class NavigationTarget(
+  val documentIndex: Int,
+  val uri: URI,
+  val version: Long,
+  val range: TextRange,
 )
 
 /**
@@ -188,6 +207,41 @@ class WorkspaceSession {
     return true
   }
 
+  /**
+   * Resolves a location reported for the document at [ownerIndex] to a range in an open editor.
+   *
+   * The compiler read on-disk text, so a location is only trusted while that is provably the text on screen: the
+   * owner's diagnostics must describe its current version, and the target document must be saved and unmodified.
+   * A location in a file that is not open, in a document edited since the check, or outside the document's bounds
+   * yields null instead of an approximate position, because navigating to the wrong source is worse than declining.
+   */
+  @Synchronized
+  fun locate(ownerIndex: Int, location: SourceLocation): NavigationTarget? {
+    val owner = entries.getOrNull(ownerIndex) ?: return null
+    val ownerSnapshot = owner.document.snapshot()
+    if (owner.diagnostics?.documentVersion != ownerSnapshot.version) return null
+    val ownerPath = owner.filePath ?: return null
+
+    val targetPath = resolveSourceIdentity(location.source, ownerPath) ?: return null
+    val targetIndex = entries.indexOfFirst { entry -> entry.filePath?.let { samePath(it, targetPath) } == true }
+    if (targetIndex < 0) return null
+    val target = entries[targetIndex]
+    val snapshot = target.document.snapshot()
+    if (target.savedVersion != snapshot.version) return null
+
+    val start = location.range.start.toScalarPosition() ?: return null
+    val end = location.range.end.toScalarPosition() ?: return null
+    val range =
+      try {
+        snapshot.rangeAt(start, end)
+      } catch (_: IndexOutOfBoundsException) {
+        return null
+      } catch (_: IllegalArgumentException) {
+        return null
+      }
+    return NavigationTarget(targetIndex, snapshot.uri, snapshot.version, range)
+  }
+
   /** Removes results for one source, for example when a check is cancelled or the compiler crashes. */
   @Synchronized
   fun clearDiagnostics(uri: URI): Boolean {
@@ -200,6 +254,26 @@ class WorkspaceSession {
   private fun activeEntry(): Entry {
     val index = activeIndex ?: throw IllegalStateException("no document is active")
     return entries[index]
+  }
+
+  /**
+   * Source identity is an absolute or driver-resolved path. A relative spelling is resolved against the directory
+   * the compiler ran in, which is the checked document's directory.
+   */
+  private fun resolveSourceIdentity(source: String, ownerPath: Path): Path? =
+    try {
+      val base = ownerPath.parent ?: return null
+      base.resolve(Path.of(source)).toAbsolutePath().normalize()
+    } catch (_: InvalidPathException) {
+      null
+    }
+
+  private fun samePath(left: Path, right: Path): Boolean =
+    if (WINDOWS) left.toString().equals(right.toString(), ignoreCase = true) else left == right
+
+  private fun SourcePosition.toScalarPosition(): ScalarPosition? {
+    if (line > Int.MAX_VALUE.toUInt() || column > Int.MAX_VALUE.toUInt()) return null
+    return ScalarPosition(line.toInt(), column.toInt())
   }
 
   private fun titleFor(uri: URI): String {

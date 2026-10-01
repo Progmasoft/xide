@@ -25,6 +25,14 @@ class LineMap private constructor(
     return lineStarts[position.line] + position.column
   }
 
+  /** The UTF-16 offsets of one line's content, excluding its line terminator. */
+  fun lineRange(line: Int): TextRange {
+    if (line !in lineStarts.indices) {
+      throw IndexOutOfBoundsException("line is outside the document")
+    }
+    return TextRange(lineStarts[line], lineEnds[line])
+  }
+
   fun positionAt(offset: Int): TextPosition {
     if (offset !in 0..textLength) {
       throw IndexOutOfBoundsException("offset is outside the document")

@@ -26,6 +26,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,13 +34,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange as SelectionRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.progmasoft.xide.compiler.DiagnosticSeverity
 import com.progmasoft.xide.compiler.CompilerRequest
+import com.progmasoft.xide.compiler.SourceLocation
 import com.progmasoft.xide.compiler.VisualXSharpCompilerClient
 import java.awt.FileDialog
 import java.awt.Frame
@@ -59,6 +65,9 @@ private val XideError = Color(0xFFFF7B86)
 private val XideWarning = Color(0xFFFFC66D)
 private val XideInformation = Color(0xFF79C8FF)
 
+/** One user request to reveal a resolved diagnostic location. */
+private data class NavigationRequest(val serial: Long, val target: NavigationTarget)
+
 /** Compose desktop surface backed by versioned documents and the structured compiler client. */
 @Composable
 fun XideApplication(
@@ -69,7 +78,22 @@ fun XideApplication(
   var workspace by remember(session) { mutableStateOf(session.snapshot()) }
   var activity by remember { mutableStateOf("Ready") }
   var busy by remember { mutableStateOf(false) }
+  // A navigation request is applied once by the editor that shows its document version. The serial makes a repeated
+  // click on the same problem a new request after the caret has moved away.
+  var navigation by remember { mutableStateOf<NavigationRequest?>(null) }
   val scope = rememberCoroutineScope()
+
+  fun showLocation(location: SourceLocation) {
+    val owner = workspace.activeIndex ?: return
+    val target = session.locate(owner, location)
+    if (target == null) {
+      activity = "This location is not in an open, unmodified document"
+      return
+    }
+    workspace = session.select(target.documentIndex)
+    navigation = NavigationRequest((navigation?.serial ?: 0L) + 1L, target)
+    activity = "Showing ${workspace.activeDocument?.title}"
+  }
 
   fun openFile() {
     val path = chooseVisualXSharpFile(owner, FileDialog.LOAD, null) ?: return
@@ -156,9 +180,10 @@ fun XideApplication(
           Editor(
             document = workspace.activeDocument,
             readOnly = busy,
+            navigation = navigation,
             onTextChange = { text -> workspace = session.replaceActiveText(text) },
           )
-          DiagnosticsPanel(workspace.activeDocument)
+          DiagnosticsPanel(workspace.activeDocument, enabled = !busy, onShowLocation = ::showLocation)
         }
       }
       StatusBar(workspace, activity, busy)
@@ -167,7 +192,7 @@ fun XideApplication(
 }
 
 @Composable
-private fun DiagnosticsPanel(document: OpenDocument?) {
+private fun DiagnosticsPanel(document: OpenDocument?, enabled: Boolean, onShowLocation: (SourceLocation) -> Unit) {
   val diagnostics = document?.diagnostics?.document?.diagnostics.orEmpty()
   if (diagnostics.isEmpty()) return
 
@@ -184,9 +209,15 @@ private fun DiagnosticsPanel(document: OpenDocument?) {
           DiagnosticSeverity.INFORMATION -> "Information" to XideInformation
           DiagnosticSeverity.HINT -> "Hint" to XideMutedText
         }
-      val location = diagnostic.primaryLocation?.range?.start
-      val suffix = location?.let { "  ${it.line + 1u}:${it.column + 1u}" }.orEmpty()
-      Text("$marker ${diagnostic.code}$suffix  ${diagnostic.message}", color = color, fontSize = 12.sp)
+      val primary = diagnostic.primaryLocation
+      val suffix = primary?.range?.start?.let { "  ${it.line + 1u}:${it.column + 1u}" }.orEmpty()
+      Text(
+        "$marker ${diagnostic.code}$suffix  ${diagnostic.message}",
+        color = color,
+        fontSize = 12.sp,
+        modifier =
+          if (primary == null) Modifier else Modifier.fillMaxWidth().clickable(enabled = enabled) { onShowLocation(primary) },
+      )
     }
   }
 }
@@ -247,7 +278,12 @@ private fun DocumentTabs(workspace: WorkspaceSnapshot, enabled: Boolean, onSelec
 }
 
 @Composable
-private fun Editor(document: OpenDocument?, readOnly: Boolean, onTextChange: (String) -> Unit) {
+private fun Editor(
+  document: OpenDocument?,
+  readOnly: Boolean,
+  navigation: NavigationRequest?,
+  onTextChange: (String) -> Unit,
+) {
   if (document == null) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
       Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -260,11 +296,32 @@ private fun Editor(document: OpenDocument?, readOnly: Boolean, onTextChange: (St
 
   // Keying the editor by URI changes its backing value when a tab is selected while preserving edits within one tab.
   androidx.compose.runtime.key(document.snapshot.uri) {
+    val snapshot = document.snapshot
+    val focus = remember { FocusRequester() }
+    var selection by remember { mutableStateOf(SelectionRange.Zero) }
+
+    // The target names the exact version its offsets were computed for. Applying it to any other text would select
+    // unrelated source, so a request for another document or an older version is ignored.
+    LaunchedEffect(navigation) {
+      val target = navigation?.target
+      if (target != null && target.uri == snapshot.uri && target.version == snapshot.version) {
+        selection = SelectionRange(target.range.start, target.range.end)
+        focus.requestFocus()
+      }
+    }
+
+    // The versioned document owns the text; this field only adds the caret. A selection left over from longer text
+    // is clamped so it can never address offsets outside the current snapshot.
+    val length = snapshot.text.length
+    val visibleSelection = SelectionRange(selection.start.coerceIn(0, length), selection.end.coerceIn(0, length))
     BasicTextField(
-      value = document.snapshot.text,
-      onValueChange = onTextChange,
+      value = TextFieldValue(snapshot.text, visibleSelection),
+      onValueChange = { value ->
+        selection = value.selection
+        if (value.text != snapshot.text) onTextChange(value.text)
+      },
       readOnly = readOnly,
-      modifier = Modifier.fillMaxSize().background(XideBackground).padding(16.dp),
+      modifier = Modifier.fillMaxSize().focusRequester(focus).background(XideBackground).padding(16.dp),
       textStyle = TextStyle(color = XideText, fontFamily = FontFamily.Monospace, fontSize = 14.sp),
       cursorBrush = androidx.compose.ui.graphics.SolidColor(XideAccent),
     )
