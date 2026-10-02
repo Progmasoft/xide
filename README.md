@@ -67,6 +67,16 @@ including a location behind a supplementary character and a click while the edit
 
 Settings loading, project navigation, quick-fix application, and the extension host remain future slices.
 
+## Artwork
+
+The application icon is the vector file `modules/app/src/main/resources/com/progmasoft/xide/app/Xide-App.svg`. The
+desktop shell decodes it at start-up and uses it as the window icon. `branding/Xide-Social-Preview.svg` is the
+repository social-preview artwork and is not packaged with the application. Both files are self-contained vector
+drawings without embedded images, fonts, scripts, or external references.
+
+Native installers still use the platform default icon: the `.ico`, `.icns`, and `.png` files that the packaging
+tasks need are not generated from the vector source yet.
+
 ## Settings
 
 User settings are Kotlin scripts named `Settings.xide.kts`:
