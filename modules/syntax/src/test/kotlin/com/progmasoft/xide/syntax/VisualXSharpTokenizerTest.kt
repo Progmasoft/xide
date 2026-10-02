@@ -29,13 +29,15 @@ class VisualXSharpTokenizerTest {
   }
 
   @Test
-  fun aDoubleDashDirectlyAfterAValueIsTheDecrementOperator() {
-    tokenizer.assertPieces("count--;", I to "count", O to "--", P to ";")
-    tokenizer.assertPieces("items[i]--;", I to "items", P to "[", I to "i", P to "]", O to "--", P to ";")
-    tokenizer.assertPieces("(a)--;", P to "(", I to "a", P to ")", O to "--", P to ";")
-    // With a space before it the same sign is a comment, as in the compiler's lexer.
+  fun aDoubleDashIsACommentEvenDirectlyAfterAValue() {
+    // The language has no decrement operator, so adjacency does not make the sign an operator.
+    tokenizer.assertPieces("count--;", I to "count", C to "--;")
+    tokenizer.assertPieces("items[i]--;", I to "items", P to "[", I to "i", P to "]", C to "--;")
+    tokenizer.assertPieces("(a)--;", P to "(", I to "a", P to ")", C to "--;")
     tokenizer.assertPieces("count --;", I to "count", C to "--;")
     tokenizer.assertPieces("a = --b", I to "a", O to "=", C to "--b")
+    tokenizer.assertPieces("a - -b", I to "a", O to "-", O to "-", I to "b")
+    tokenizer.assertPieces("count++;", I to "count", O to "++", P to ";")
   }
 
   @Test

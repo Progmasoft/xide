@@ -10,8 +10,8 @@ package com.progmasoft.xide.syntax
  *
  * The lexical rules mirror the compiler's lexer where colouring depends on them:
  *
- * - `--` starts a comment that runs to the end of the line, except directly after a name, a literal, `)` or `]`,
- *   where it is the postfix decrement operator;
+ * - `--` starts a comment that runs to the end of the line wherever it stands outside a string; the language has
+ *   no decrement operator, so `value--` is a name followed by a comment;
  * - `--[[` and `--[=[` start a long comment that ends at the matching `]]` or `]=]`, at any nesting level of `=`;
  * - a comment whose text starts with `|` or `!` is a documentation comment;
  * - `[[` and `[=[` start a raw string with the same long-bracket rule, in which nothing is an escape;
@@ -33,7 +33,7 @@ object VisualXSharpTokenizer : Tokenizer {
     listOf(
       "...", "<<=", ">>=", "**=", "//=", "??=",
       "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "??", "?:", "==", "\\=", "<=", ">=", "&&", "||", "//", "->",
-      "**", "++", "--",
+      "**", "++",
       "=", "+", "-", "*", "/", "%", "&", "|", "^", "<", ">", "!", "?", "\\",
     )
 
@@ -53,7 +53,7 @@ object VisualXSharpTokenizer : Tokenizer {
     val start = position
     val current = peek()
     when {
-      current == '-' && peek(1) == '-' && !isPostfixDecrement() -> comment()
+      current == '-' && peek(1) == '-' -> comment()
       current == '[' && longBracketLevel(position) >= 0 -> {
         val level = longBracketLevel(position)
         position += level + 2
@@ -77,22 +77,6 @@ object VisualXSharpTokenizer : Tokenizer {
         scanQuoted(start, "'", multiLine = false, escapes = true)
       }
       else -> emitSign(operators, PUNCTUATION)
-    }
-  }
-
-  /**
-   * Whether `--` at the scanner's position is the decrement operator rather than a comment.
-   *
-   * It is the operator only when it directly follows a token that can be decremented, with no space between.
-   */
-  private fun Scanner.isPostfixDecrement(): Boolean {
-    val previous = lastToken ?: return false
-    if (previous.end != position) return false
-    return when (previous.kind) {
-      TokenKind.IDENTIFIER, TokenKind.NUMBER, TokenKind.STRING -> true
-      TokenKind.KEYWORD -> lastText().toString() in setOf("true", "false", "null")
-      TokenKind.PUNCTUATION -> text[previous.end - 1] == ')' || text[previous.end - 1] == ']'
-      else -> false
     }
   }
 
