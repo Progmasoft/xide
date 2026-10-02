@@ -6,5 +6,6 @@
 rootProject.name = "xide"
 
 include("modules:document")
+include("modules:syntax")
 include("modules:compiler")
 include("modules:app")
