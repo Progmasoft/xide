@@ -40,7 +40,9 @@ The renewed Kotlin/JVM foundation currently has three modules. `xide-document` p
 - immutable, versioned document snapshots;
 - validated UTF-16 offset ranges and text edits;
 - LF, CRLF, and CR-aware line/column conversion;
-- supplementary-character handling compatible with JVM and LSP UTF-16 coordinates; and
+- supplementary-character handling compatible with JVM and LSP UTF-16 coordinates;
+- conversion of the compiler's zero-based line and Unicode-scalar column positions to UTF-16 offsets, rejecting
+  positions outside the snapshot instead of clamping them; and
 - stale-version protection for concurrent editor consumers.
 
 `xide-compiler` consumes the bounded VXDG v1 structured diagnostic protocol and invokes the single public `vxs` driver.
@@ -51,8 +53,19 @@ discards stale asynchronous results after edits, and renders accepted records in
 The application module also owns the first real Compose desktop slice: an application window, native `.vxs` open/save
 dialogs, atomic filesystem saves, dirty editor indicators, open-editor navigation, scratch documents, a text editor,
 compiler Check action, Problems surface, and an activity-aware status bar. UI updates pass through the versioned document
-API rather than maintaining a second mutable text model. Settings loading, project navigation, diagnostic navigation,
-quick-fix application, and the extension host remain future slices.
+API rather than maintaining a second mutable text model.
+
+Selecting a problem reveals its primary location in the editor. A location is resolved only while it is provably the
+text the compiler read: the checked document must still have the version its diagnostics were produced for, and the
+target must be an open, saved, and unmodified `.vxs` file. Locations in files that are not open, in documents edited
+since the check, or outside the document are declined with a status message rather than approximated. The editor
+gives up keyboard focus while it shows the range, because a focused text field keeps its own caret; clicking into the
+editor resumes typing. Opening the target file on demand and navigating related locations are not implemented yet.
+
+`ProblemNavigationUiTest` drives the real Compose shell: it clicks rendered problems and checks the editor selection,
+including a location behind a supplementary character and a click while the editor has focus.
+
+Settings loading, project navigation, quick-fix application, and the extension host remain future slices.
 
 ## Artwork
 

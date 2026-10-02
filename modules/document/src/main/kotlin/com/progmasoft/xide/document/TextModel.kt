@@ -13,6 +13,19 @@ data class TextPosition(val line: Int, val column: Int) {
   }
 }
 
+/**
+ * A zero-based line and Unicode-scalar column, the coordinate system of compiler diagnostics.
+ *
+ * A supplementary character is one scalar but two UTF-16 code units, so this is deliberately a different type from
+ * [TextPosition]: adding a scalar column to a JVM string index lands inside or past the intended character.
+ */
+data class ScalarPosition(val line: Int, val column: Int) {
+  init {
+    require(line >= 0) { "line must not be negative" }
+    require(column >= 0) { "column must not be negative" }
+  }
+}
+
 /** A half-open range of UTF-16 code-unit offsets. */
 data class TextRange(val start: Int, val end: Int) {
   init {

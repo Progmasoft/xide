@@ -43,6 +43,7 @@ dependencies {
     implementation("org.jetbrains.compose.material:material:1.11.0")
 
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.compose.ui:ui-test:1.11.0")
 }
 
 tasks.withType<JavaCompile>().configureEach {
