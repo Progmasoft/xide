@@ -24,6 +24,7 @@ enum class DiagnosticStage {
   LLVM_BACKEND,
 }
 
+/** How serious a diagnostic is, declared from most to least severe. The wire ordinals are stable. */
 enum class DiagnosticSeverity {
   ERROR,
   WARNING,
@@ -31,37 +32,80 @@ enum class DiagnosticSeverity {
   HINT,
 }
 
+/**
+ * A position in compiler coordinates.
+ *
+ * @property line the zero-based line index.
+ * @property column the zero-based column counted in Unicode scalar values, not UTF-16 code units.
+ */
 data class SourcePosition(val line: UInt, val column: UInt) : Comparable<SourcePosition> {
+  /** Orders positions by line and then by column. */
   override fun compareTo(other: SourcePosition): Int =
     compareValuesBy(this, other, SourcePosition::line, SourcePosition::column)
 }
 
+/**
+ * A half-open range between two positions of one source.
+ *
+ * @property start the first position of the range.
+ * @property end the position just after the range; it never precedes [start].
+ */
 data class SourceRange(val start: SourcePosition, val end: SourcePosition) {
   init {
     require(start <= end) { "diagnostic range end must not precede its start" }
   }
 }
 
+/**
+ * A range inside one source.
+ *
+ * @property source the compiler's identity for the source: an absolute path or one relative to its working directory.
+ * @property range the range inside that source.
+ */
 data class SourceLocation(val source: String, val range: SourceRange) {
   init {
     require(source.isNotEmpty()) { "diagnostic source identity must not be empty" }
   }
 }
 
+/**
+ * A named value substituted into a diagnostic message, kept separately so tooling can use it.
+ *
+ * @property name the argument's name, unique within its diagnostic.
+ * @property value the argument's rendered value.
+ */
 data class DiagnosticArgument(val name: String, val value: String) {
   init {
     require(name.isNotEmpty()) { "diagnostic argument name must not be empty" }
   }
 }
 
+/**
+ * A secondary location that explains a diagnostic.
+ *
+ * @property location where the related source is.
+ * @property message what that location contributes.
+ */
 data class RelatedDiagnostic(val location: SourceLocation, val message: String) {
   init {
     require(message.isNotEmpty()) { "related diagnostic message must not be empty" }
   }
 }
 
+/**
+ * One replacement a fix performs.
+ *
+ * @property location the range to replace.
+ * @property replacement the text that replaces it.
+ */
 data class DiagnosticTextEdit(val location: SourceLocation, val replacement: String)
 
+/**
+ * A change the compiler offers to resolve a diagnostic.
+ *
+ * @property title the label shown for the fix.
+ * @property edits the replacements the fix performs; never empty.
+ */
 data class DiagnosticFix(val title: String, val edits: List<DiagnosticTextEdit>) {
   init {
     require(title.isNotEmpty()) { "diagnostic fix title must not be empty" }
@@ -69,6 +113,18 @@ data class DiagnosticFix(val title: String, val edits: List<DiagnosticTextEdit>)
   }
 }
 
+/**
+ * One finding reported by the compiler.
+ *
+ * @property stage the compiler stage that reported it.
+ * @property severity how serious it is.
+ * @property code the stable diagnostic code: 1 to 64 ASCII uppercase letters, digits or hyphens.
+ * @property message the rendered message.
+ * @property arguments the named values that appear in the message.
+ * @property primaryLocation where the finding is, or null when it is not tied to a source range.
+ * @property relatedLocations secondary locations that explain it.
+ * @property fixes the changes the compiler offers for it.
+ */
 data class CompilerDiagnostic(
   val stage: DiagnosticStage,
   val severity: DiagnosticSeverity,
@@ -89,14 +145,31 @@ data class CompilerDiagnostic(
     }
   }
 
+  /** Validation helpers for diagnostic codes. */
   companion object {
     private fun isCodeCharacter(character: Char): Boolean =
       character in 'A'..'Z' || character in '0'..'9' || character == '-'
   }
 }
 
+/**
+ * Everything one compiler run reported.
+ *
+ * @property diagnostics the findings in the order the compiler emitted them.
+ */
 data class DiagnosticDocument(val diagnostics: List<CompilerDiagnostic>)
 
+/**
+ * Upper bounds the decoder enforces before it allocates anything.
+ *
+ * @property maximumWireBytes the largest accepted document, in bytes.
+ * @property maximumDiagnostics the largest accepted number of diagnostics.
+ * @property maximumTextScalars the largest accepted length of one text, in Unicode scalar values.
+ * @property maximumArguments the largest accepted number of arguments of one diagnostic.
+ * @property maximumRelatedLocations the largest accepted number of related locations of one diagnostic.
+ * @property maximumFixes the largest accepted number of fixes of one diagnostic.
+ * @property maximumEditsPerFix the largest accepted number of edits of one fix.
+ */
 data class DiagnosticProtocolLimits(
   val maximumWireBytes: Int = 16 * 1024 * 1024,
   val maximumDiagnostics: UInt = 65_535u,
@@ -111,6 +184,12 @@ data class DiagnosticProtocolLimits(
   }
 }
 
+/**
+ * A diagnostic document that does not follow the protocol.
+ *
+ * @property offset the byte offset at which decoding failed.
+ * @property context the field that was being decoded.
+ */
 class DiagnosticProtocolException(
   val offset: Int,
   val context: String,
@@ -126,9 +205,15 @@ class DiagnosticProtocolException(
  * mistaken for a partial success.
  */
 object DiagnosticProtocol {
+  /** The protocol version this decoder accepts. */
   const val VERSION: Int = 1
   private val magic = byteArrayOf('V'.code.toByte(), 'X'.code.toByte(), 'D'.code.toByte(), 'G'.code.toByte())
 
+  /**
+   * Decodes one complete diagnostic document.
+   *
+   * @throws DiagnosticProtocolException when the bytes are not a valid document within [limits].
+   */
   fun decode(
     bytes: ByteArray,
     limits: DiagnosticProtocolLimits = DiagnosticProtocolLimits(),

@@ -16,6 +16,15 @@ import java.time.Duration
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
+/**
+ * One request to check a source file with the `vxs` driver.
+ *
+ * @property source the absolute path of the file to check.
+ * @property workingDirectory the absolute directory the compiler runs in; relative locations in its diagnostics
+ *   are relative to this directory. It defaults to the source's directory.
+ * @property executable the driver to run; a bare name is resolved through the search path.
+ * @property timeout how long the compiler may run before its process tree is terminated.
+ */
 data class CompilerRequest(
   val source: Path,
   val workingDirectory: Path = source.toAbsolutePath().normalize().parent ?: source.toAbsolutePath().normalize(),
@@ -29,6 +38,15 @@ data class CompilerRequest(
   }
 }
 
+/**
+ * The outcome of one compiler request.
+ *
+ * @property exitCode the driver's process exit code.
+ * @property diagnostics the structured diagnostics the driver wrote to its side channel.
+ * @property standardOutput the driver's terminal output, kept for display and never parsed for diagnostics.
+ * @property standardError the driver's terminal error output, kept for display and never parsed for diagnostics.
+ * @property timedOut whether the driver was terminated for exceeding its timeout.
+ */
 data class CompilerResult(
   val exitCode: Int,
   val diagnostics: DiagnosticDocument,
@@ -36,15 +54,25 @@ data class CompilerResult(
   val standardError: String,
   val timedOut: Boolean,
 ) {
+  /** Whether the check passed: a zero exit code, no timeout, and no diagnostic of error severity. */
   val succeeded: Boolean
     get() = exitCode == 0 && !timedOut && diagnostics.diagnostics.none { it.severity == DiagnosticSeverity.ERROR }
 }
 
 /** A narrow process abstraction keeps command construction and stale-file handling independently testable. */
 fun interface CompilerProcessRunner {
+  /** Runs one process to completion or to its timeout and returns what it produced. */
   fun run(invocation: CompilerInvocation): CompilerProcessResult
 }
 
+/**
+ * A fully resolved process launch.
+ *
+ * @property command the executable followed by its arguments.
+ * @property workingDirectory the directory the process starts in.
+ * @property environment variables added to the inherited environment.
+ * @property timeout how long the process may run.
+ */
 data class CompilerInvocation(
   val command: List<String>,
   val workingDirectory: Path,
@@ -52,6 +80,14 @@ data class CompilerInvocation(
   val timeout: Duration,
 )
 
+/**
+ * What a finished or terminated process produced.
+ *
+ * @property exitCode the process exit code; meaningful only when [timedOut] is false.
+ * @property standardOutput the captured standard output bytes.
+ * @property standardError the captured standard error bytes.
+ * @property timedOut whether the process was terminated for exceeding its timeout.
+ */
 data class CompilerProcessResult(
   val exitCode: Int,
   val standardOutput: ByteArray,
@@ -71,6 +107,13 @@ class VisualXSharpCompilerClient(
   private val runner: CompilerProcessRunner = SystemCompilerProcessRunner(),
   private val limits: DiagnosticProtocolLimits = DiagnosticProtocolLimits(),
 ) {
+  /**
+   * Checks one source file and returns its structured diagnostics.
+   *
+   * @throws IllegalArgumentException when the source is not a regular file or the working directory does not exist.
+   * @throws CompilerClientException when the driver produced no diagnostic document, an oversized one, or one that
+   *   does not decode.
+   */
   fun check(request: CompilerRequest): CompilerResult {
     require(Files.isRegularFile(request.source)) { "compiler source must identify a regular file" }
     require(Files.isDirectory(request.workingDirectory)) { "compiler working directory must exist" }
@@ -128,6 +171,7 @@ class VisualXSharpCompilerClient(
   }
 }
 
+/** The compiler ran but its structured result could not be used. */
 class CompilerClientException(message: String, cause: Throwable? = null) : IllegalStateException(message, cause)
 
 /** Production runner with concurrent bounded stream drains to prevent child-process pipe deadlocks. */
@@ -138,6 +182,7 @@ class SystemCompilerProcessRunner(
     require(maximumStreamBytes > 0) { "maximum stream byte count must be positive" }
   }
 
+  /** Starts the process, drains both of its output streams concurrently, and terminates its process tree on timeout. */
   override fun run(invocation: CompilerInvocation): CompilerProcessResult {
     require(invocation.command.isNotEmpty()) { "compiler invocation must contain an executable" }
     val builder = ProcessBuilder(invocation.command)
