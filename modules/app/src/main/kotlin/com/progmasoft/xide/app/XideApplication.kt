@@ -32,11 +32,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange as SelectionRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
@@ -71,7 +71,7 @@ private data class NavigationRequest(val serial: Long, val target: NavigationTar
 /** Compose desktop surface backed by versioned documents and the structured compiler client. */
 @Composable
 fun XideApplication(
-  owner: Frame,
+  owner: Frame?,
   session: WorkspaceSession = remember { WorkspaceSession() },
   compilerClient: VisualXSharpCompilerClient = remember { VisualXSharpCompilerClient() },
 ) {
@@ -177,7 +177,10 @@ fun XideApplication(
         Explorer(workspace, enabled = !busy, onSelect = { workspace = session.select(it) })
         Column(Modifier.weight(1f).fillMaxHeight()) {
           DocumentTabs(workspace, enabled = !busy, onSelect = { workspace = session.select(it) })
+          // The editor takes the height that remains after the tabs and the Problems panel. Filling the whole
+          // column instead would leave the panel below it with no height, so problems would never be visible.
           Editor(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
             document = workspace.activeDocument,
             readOnly = busy,
             navigation = navigation,
@@ -279,13 +282,14 @@ private fun DocumentTabs(workspace: WorkspaceSnapshot, enabled: Boolean, onSelec
 
 @Composable
 private fun Editor(
+  modifier: Modifier,
   document: OpenDocument?,
   readOnly: Boolean,
   navigation: NavigationRequest?,
   onTextChange: (String) -> Unit,
 ) {
   if (document == null) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(modifier, contentAlignment = Alignment.Center) {
       Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Visual X#", color = XideText, fontSize = 28.sp)
         Text("Create a file to begin editing.", color = XideMutedText)
@@ -297,7 +301,7 @@ private fun Editor(
   // Keying the editor by URI changes its backing value when a tab is selected while preserving edits within one tab.
   androidx.compose.runtime.key(document.snapshot.uri) {
     val snapshot = document.snapshot
-    val focus = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
     var selection by remember { mutableStateOf(SelectionRange.Zero) }
 
     // The target names the exact version its offsets were computed for. Applying it to any other text would select
@@ -305,8 +309,11 @@ private fun Editor(
     LaunchedEffect(navigation) {
       val target = navigation?.target
       if (target != null && target.uri == snapshot.uri && target.version == snapshot.version) {
+        // A focused text field owns its caret and immediately collapses a selection set from outside, so the
+        // editor gives up focus first and shows the range one frame later. Clicking into the editor resumes typing.
+        focusManager.clearFocus()
+        withFrameNanos {}
         selection = SelectionRange(target.range.start, target.range.end)
-        focus.requestFocus()
       }
     }
 
@@ -321,7 +328,7 @@ private fun Editor(
         if (value.text != snapshot.text) onTextChange(value.text)
       },
       readOnly = readOnly,
-      modifier = Modifier.fillMaxSize().focusRequester(focus).background(XideBackground).padding(16.dp),
+      modifier = modifier.background(XideBackground).padding(16.dp),
       textStyle = TextStyle(color = XideText, fontFamily = FontFamily.Monospace, fontSize = 14.sp),
       cursorBrush = androidx.compose.ui.graphics.SolidColor(XideAccent),
     )
@@ -347,7 +354,7 @@ private fun StatusBar(workspace: WorkspaceSnapshot, activity: String, busy: Bool
 }
 
 /** Native dialogs keep file ownership outside Compose state and return normalized absolute paths. */
-private fun chooseVisualXSharpFile(owner: Frame, mode: Int, suggestedName: String?): Path? {
+private fun chooseVisualXSharpFile(owner: Frame?, mode: Int, suggestedName: String?): Path? {
   val dialog = FileDialog(owner, if (mode == FileDialog.LOAD) "Open Visual X# File" else "Save Visual X# File", mode)
   dialog.file = suggestedName
   dialog.filenameFilter = java.io.FilenameFilter { _, name -> name.endsWith(".vxs") }

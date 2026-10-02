@@ -58,8 +58,12 @@ API rather than maintaining a second mutable text model.
 Selecting a problem reveals its primary location in the editor. A location is resolved only while it is provably the
 text the compiler read: the checked document must still have the version its diagnostics were produced for, and the
 target must be an open, saved, and unmodified `.vxs` file. Locations in files that are not open, in documents edited
-since the check, or outside the document are declined with a status message rather than approximated. Opening the
-target file on demand and navigating related locations are not implemented yet.
+since the check, or outside the document are declined with a status message rather than approximated. The editor
+gives up keyboard focus while it shows the range, because a focused text field keeps its own caret; clicking into the
+editor resumes typing. Opening the target file on demand and navigating related locations are not implemented yet.
+
+`ProblemNavigationUiTest` drives the real Compose shell: it clicks rendered problems and checks the editor selection,
+including a location behind a supplementary character and a click while the editor has focus.
 
 Settings loading, project navigation, quick-fix application, and the extension host remain future slices.
 
