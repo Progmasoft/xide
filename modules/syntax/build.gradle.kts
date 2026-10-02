@@ -5,10 +5,9 @@
 
 plugins {
     jacoco
+    `java-library`
     kotlin("jvm")
     id("org.jetbrains.dokka")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jetbrains.compose")
 }
 
 jacoco {
@@ -27,6 +26,19 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
+
+    withJavadocJar()
+    withSourcesJar()
+}
+
+dependencies {
+    testImplementation(kotlin("test"))
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release = 25
+    options.encoding = "UTF-8"
+    options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
 }
 
 kotlin {
@@ -36,39 +48,12 @@ kotlin {
     }
 }
 
-dependencies {
-    implementation(project(":modules:compiler"))
-    implementation(project(":modules:document"))
-    implementation(project(":modules:syntax"))
-    implementation(compose.desktop.currentOs)
-    implementation("org.jetbrains.compose.components:components-resources:1.11.0")
-    implementation("org.jetbrains.compose.material:material:1.11.0")
-
-    testImplementation(kotlin("test"))
-    testImplementation("org.jetbrains.compose.ui:ui-test:1.11.0")
-}
-
-tasks.withType<JavaCompile>().configureEach {
-    options.release = 25
-    options.encoding = "UTF-8"
-    options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
-}
-
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
-compose.desktop {
-    application {
-        mainClass = "com.progmasoft.xide.app.MainKt"
-
-        nativeDistributions {
-            packageName = "Xide"
-            packageVersion = project.version.toString()
-            description = "Visual X# integrated development environment"
-            vendor = "Progmasoft"
-        }
-    }
+tasks.withType<Javadoc>().configureEach {
+    (options as StandardJavadocDocletOptions).addBooleanOption("Werror", true)
 }
 
 // Every public declaration must carry KDoc. Dokka reports an undocumented one as a warning, a warning fails the

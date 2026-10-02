@@ -35,7 +35,7 @@ CodeQL extraction covers Kotlin/JVM and GitHub Actions, not this retired toolkit
 
 ## Current foundation
 
-The renewed Kotlin/JVM foundation currently has three modules. `xide-document` provides:
+The renewed Kotlin/JVM foundation currently has four modules. `xide-document` provides:
 
 - immutable, versioned document snapshots;
 - validated UTF-16 offset ranges and text edits;
@@ -70,6 +70,12 @@ bottom. UI updates pass through the versioned document API rather than maintaini
   Python (`.py`) sources open, edit, and save as text. Analysis is a separate capability: the compiler `Check` action
   is connected for Visual X# only, and it is disabled for the other languages rather than pretending to check them.
   Until the Visual X# toolchain settles, Kotlin is the first language the editor work targets.
+- **Syntax colouring.** `xide-syntax` splits a source text into lexical tokens, and the editor colours keywords,
+  numbers, strings with their escapes and embedded expressions, comments, documentation comments and annotations
+  for all five languages. The tokenizers are total: any text, however malformed, yields tokens that cover every
+  non-blank character exactly once, which `checkTokens` verifies. Colouring is lexical only; names are not coloured
+  by meaning. Soft keywords such as Kotlin's `value` or Python's `match` are recognized from neighbouring tokens,
+  so an unusual position may stay uncoloured. A text longer than 400,000 UTF-16 code units is shown uncoloured.
 - **Problems and status.** The Problems tool window lists the active document's diagnostics with their severity,
   code and location. The status bar shows the current activity, problem counts, the caret position, the line
   separator, the encoding, and the language.

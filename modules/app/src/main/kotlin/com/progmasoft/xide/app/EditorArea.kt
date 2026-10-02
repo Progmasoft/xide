@@ -186,6 +186,11 @@ internal fun EditorArea(
       val lineCount = remember(snapshot.version, snapshot.uri) { snapshot.lineMap().lineCount }
       val numbers = remember(lineCount) { gutterNumbers(lineCount) }
       val markerText = remember(lineCount, markers) { gutterMarkers(lineCount, markers) }
+      // Colours follow the text: they are recomputed for each version and never outlive the text they describe.
+      val highlighting =
+        remember(snapshot.version, snapshot.uri, document.language) {
+          SyntaxHighlightTransformation(snapshot.text.length, syntaxSpans(document.language, snapshot.text))
+        }
 
       Row(Modifier.verticalScroll(vertical).heightIn(min = viewportHeight)) {
         BasicText(
@@ -220,6 +225,7 @@ internal fun EditorArea(
                   .padding(horizontal = 10.dp, vertical = XideMetrics.editorPadding),
               textStyle = XideType.code,
               cursorBrush = SolidColor(XideColors.text),
+              visualTransformation = highlighting,
               onTextLayout = { layout = it },
             )
           }
