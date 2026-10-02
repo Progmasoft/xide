@@ -6,6 +6,7 @@
 plugins {
     jacoco
     kotlin("jvm")
+    id("org.jetbrains.dokka")
 }
 
 jacoco {
@@ -46,3 +47,18 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
+
+// Every public declaration must carry KDoc. Dokka reports an undocumented one as a warning, a warning fails the
+// HTML publication, and the publication is part of `check`, so missing documentation fails the same gate as a
+// failing test.
+dokka {
+    dokkaPublications.html {
+        failOnWarning.set(true)
+        outputDirectory.set(layout.buildDirectory.dir("dokka/html"))
+    }
+    dokkaSourceSets.configureEach {
+        reportUndocumented.set(true)
+    }
+}
+
+tasks.check { dependsOn(tasks.dokkaGenerateHtml) }

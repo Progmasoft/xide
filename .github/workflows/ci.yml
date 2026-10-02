@@ -24,4 +24,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
       # Windows checkouts do not preserve the Unix executable bit reliably. Invoke
       # the pinned wrapper through Bash so CI depends on its content, not NTFS mode.
-      - run: bash ./gradlew check
+      - name: Test and verify every module
+        run: bash ./gradlew check
+      # `check` already depends on the Dokka publication. Running it as its own step
+      # makes a documentation failure visible by name instead of inside the test log.
+      - name: Require KDoc on every public declaration
+        run: bash ./gradlew dokkaGenerateHtml

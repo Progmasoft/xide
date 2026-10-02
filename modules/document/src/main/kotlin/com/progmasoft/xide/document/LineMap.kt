@@ -11,9 +11,17 @@ class LineMap private constructor(
   private val lineEnds: IntArray,
   private val textLength: Int,
 ) {
+  /** The number of lines; a text always has at least one, and a trailing terminator starts an empty last line. */
   val lineCount: Int
     get() = lineStarts.size
 
+  /**
+   * The UTF-16 offset of a line and column.
+   *
+   * The column may equal the line's length, which addresses the position just before its terminator.
+   *
+   * @throws IndexOutOfBoundsException when the line does not exist or the column lies beyond the line.
+   */
   fun offsetAt(position: TextPosition): Int {
     if (position.line !in lineStarts.indices) {
       throw IndexOutOfBoundsException("line is outside the document")
@@ -33,6 +41,14 @@ class LineMap private constructor(
     return TextRange(lineStarts[line], lineEnds[line])
   }
 
+  /**
+   * The line and column of a UTF-16 offset.
+   *
+   * An offset inside a line terminator reports the end of the line it terminates, so every offset in `0..length`
+   * has a position.
+   *
+   * @throws IndexOutOfBoundsException when the offset is outside the text.
+   */
   fun positionAt(offset: Int): TextPosition {
     if (offset !in 0..textLength) {
       throw IndexOutOfBoundsException("offset is outside the document")
@@ -43,7 +59,9 @@ class LineMap private constructor(
     return TextPosition(line, column)
   }
 
+  /** Builds line maps. */
   companion object {
+    /** Indexes the lines of a text. LF, CRLF and a lone CR each end a line, and CRLF counts as one terminator. */
     fun of(text: String): LineMap {
       val starts = mutableListOf<Int>()
       val ends = mutableListOf<Int>()

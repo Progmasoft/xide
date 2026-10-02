@@ -27,6 +27,7 @@ internal fun loadApplicationIcon(): Painter {
   return stream.use { it.readBytes() }.decodeToSvgPainter(Density(1f))
 }
 
+/** Starts the Xide desktop application. */
 fun main() = application {
   val icon = remember { loadApplicationIcon() }
   Window(

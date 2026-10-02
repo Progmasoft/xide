@@ -7,13 +7,20 @@ package com.progmasoft.xide.document
 
 import java.net.URI
 
-/** An immutable document version safe to share with background language services. */
+/**
+ * An immutable document version safe to share with background language services.
+ *
+ * @property uri the absolute identity of the document.
+ * @property version the number of edits applied since the document was opened.
+ * @property text the complete text of this version.
+ */
 data class DocumentSnapshot(val uri: URI, val version: Long, val text: String) {
   init {
     require(uri.isAbsolute) { "uri must be absolute" }
     require(version >= 0) { "version must not be negative" }
   }
 
+  /** Indexes this snapshot's lines. The map is computed on each call and is valid for this snapshot only. */
   fun lineMap(): LineMap = LineMap.of(text)
 
   /**
@@ -48,6 +55,13 @@ data class DocumentSnapshot(val uri: URI, val version: Long, val text: String) {
     return TextRange(startOffset, endOffset)
   }
 
+  /**
+   * Returns the snapshot that results from one edit; this snapshot is unchanged.
+   *
+   * The result has the next version number.
+   *
+   * @throws IndexOutOfBoundsException when the edit's range lies outside the text.
+   */
   fun apply(edit: TextEdit): DocumentSnapshot {
     if (edit.range.end > text.length) {
       throw IndexOutOfBoundsException("edit range is outside the document")
@@ -66,8 +80,15 @@ data class DocumentSnapshot(val uri: URI, val version: Long, val text: String) {
 class TextDocument(uri: URI, text: String) {
   private var current = DocumentSnapshot(uri, 0, text)
 
+  /** The current immutable snapshot. */
   @Synchronized fun snapshot(): DocumentSnapshot = current
 
+  /**
+   * Applies an edit that was prepared against [expectedVersion] and returns the new snapshot.
+   *
+   * @throws StaleDocumentVersionException when the document has changed since that version, so an edit computed
+   *   from older text can never be applied to newer text.
+   */
   @Synchronized
   fun apply(expectedVersion: Long, edit: TextEdit): DocumentSnapshot {
     if (current.version != expectedVersion) {

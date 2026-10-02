@@ -50,10 +50,34 @@ Every request uses a unique temporary side channel, drains process output concur
 reconstruct diagnostics by scraping terminal text. `xide-app` binds results to the exact document version that was checked,
 discards stale asynchronous results after edits, and renders accepted records in its problems surface.
 
-The application module also owns the first real Compose desktop slice: an application window, native `.vxs` open/save
-dialogs, atomic filesystem saves, dirty editor indicators, open-editor navigation, scratch documents, a text editor,
-compiler Check action, Problems surface, and an activity-aware status bar. UI updates pass through the versioned document
-API rather than maintaining a second mutable text model.
+The application module also owns the Compose desktop shell. Its arrangement follows the familiar IDE layout, which is
+the direction for the final design: a toolbar on top, a stripe of tool-window buttons on the left edge, the Project
+tool window beside it, a tabbed editor in the centre with the Problems tool window below it, and a status bar at the
+bottom. UI updates pass through the versioned document API rather than maintaining a second mutable text model.
+
+- **Project tool window.** `Open Folder` shows a folder as a tree. Directories are read one level at a time when
+  they are expanded, symbolic links are listed but never followed, and a directory that cannot be read or that has
+  more entries than the listing limit says so instead of looking complete.
+- **Exclusions.** Xide leaves nothing out on its own. The only source of exclusions is `.xide/exclude.list` in the
+  opened folder, written in `.gitignore` syntax. When the file does not exist, Xide generates it from the folder's
+  `.gitignore` files; patterns from a nested `.gitignore` are rewritten so they mean the same thing from the opened
+  folder. An existing list, whether generated or written by hand, is only read and never regenerated. A folder with
+  neither file has no exclusions.
+- **Editor.** Each open document has a tab with its own close control. A modified tab does not close silently: a
+  bar offers to save, discard, or cancel. The gutter shows line numbers and a marker on each line that has a
+  problem; long lines scroll horizontally instead of wrapping so the gutter stays aligned.
+- **Languages.** Visual X# (`.vxs`), Kotlin (`.kt`, `.kts`), Java (`.java`), Groovy (`.groovy`, `.gradle`), and
+  Python (`.py`) sources open, edit, and save as text. Analysis is a separate capability: the compiler `Check` action
+  is connected for Visual X# only, and it is disabled for the other languages rather than pretending to check them.
+  Until the Visual X# toolchain settles, Kotlin is the first language the editor work targets.
+- **Problems and status.** The Problems tool window lists the active document's diagnostics with their severity,
+  code and location. The status bar shows the current activity, problem counts, the caret position, the line
+  separator, the encoding, and the language.
+- **Shortcuts.** `Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `Ctrl+W`/`Ctrl+F4` act on files and tabs; `Alt+1` and `Alt+6` toggle
+  the Project and Problems tool windows.
+
+Syntax highlighting, code analysis for Kotlin, Java and Groovy, resizable tool windows, and file operations in the
+Project tool window are not implemented yet.
 
 Selecting a problem reveals its primary location in the editor. A location is resolved only while it is provably the
 text the compiler read: the checked document must still have the version its diagnostics were produced for, and the
@@ -62,10 +86,11 @@ since the check, or outside the document are declined with a status message rath
 gives up keyboard focus while it shows the range, because a focused text field keeps its own caret; clicking into the
 editor resumes typing. Opening the target file on demand and navigating related locations are not implemented yet.
 
-`ProblemNavigationUiTest` drives the real Compose shell: it clicks rendered problems and checks the editor selection,
-including a location behind a supplementary character and a click while the editor has focus.
+`ProblemNavigationUiTest` and `ShellUiTest` drive the real Compose shell: they click rendered problems and check the
+editor selection, open sources from the Project tool window, toggle tool windows from the stripe and from the
+keyboard, close clean and modified tabs, and read the gutter and status bar back through the semantics tree.
 
-Settings loading, project navigation, quick-fix application, and the extension host remain future slices.
+Settings loading, quick-fix application, and the extension host remain future slices.
 
 ## Artwork
 
@@ -104,6 +129,10 @@ JDK 25 is required. Run all Kotlin, document, and Compose application checks wit
 ```text
 gradlew.bat check
 ```
+
+`check` also builds the Dokka HTML documentation of every module with undocumented-declaration reporting and
+warnings as failures, so a public declaration without KDoc fails the build. The pages are written to each module's
+`build/dokka/html`.
 
 Launch the current desktop shell during development with:
 

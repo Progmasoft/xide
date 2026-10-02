@@ -6,6 +6,7 @@
 package com.progmasoft.xide.app
 
 import com.progmasoft.xide.compiler.DiagnosticDocument
+import com.progmasoft.xide.compiler.DiagnosticSeverity
 import com.progmasoft.xide.compiler.SourceLocation
 import com.progmasoft.xide.compiler.SourcePosition
 import com.progmasoft.xide.document.DocumentSnapshot
@@ -23,7 +24,12 @@ import java.nio.file.StandardCopyOption
 
 private val WINDOWS: Boolean = System.getProperty("os.name").startsWith("Windows", ignoreCase = true)
 
-/** Immutable view of the documents that the desktop shell may render. */
+/**
+ * Immutable view of the documents that the desktop shell may render.
+ *
+ * @property documents the open documents in tab order.
+ * @property activeIndex the index of the document shown in the editor, or null when none is open.
+ */
 data class WorkspaceSnapshot(
   val documents: List<OpenDocument>,
   val activeIndex: Int?,
@@ -37,11 +43,20 @@ data class WorkspaceSnapshot(
     }
   }
 
+  /** The document shown in the editor, or null when none is open. */
   val activeDocument: OpenDocument?
     get() = activeIndex?.let(documents::get)
 }
 
-/** Display metadata paired with the immutable editor snapshot. */
+/**
+ * Display metadata paired with the immutable editor snapshot.
+ *
+ * @property title the name shown on the document's tab.
+ * @property snapshot the text and version the editor shows.
+ * @property diagnostics the most recent compiler result, or null when there is none for the current text.
+ * @property savedVersion the snapshot version that is on disk, or null for a document that was never saved.
+ * @property filePath the file the document is saved to, or null for a scratch document.
+ */
 data class OpenDocument(
   val title: String,
   val snapshot: DocumentSnapshot,
@@ -49,11 +64,21 @@ data class OpenDocument(
   val savedVersion: Long? = null,
   val filePath: Path? = null,
 ) {
+  /** Whether the text differs from what is on disk. */
   val isDirty: Boolean
     get() = savedVersion != snapshot.version
+
+  /** The language recognized from the document's name, or null for a name Xide does not associate with one. */
+  val language: SourceLanguage?
+    get() = SourceLanguage.ofFileName(title)
 }
 
-/** Compiler output bound to the exact immutable document snapshot that produced it. */
+/**
+ * Compiler output bound to the exact immutable document snapshot that produced it.
+ *
+ * @property documentVersion the snapshot version the compiler read.
+ * @property document what the compiler reported for that version.
+ */
 data class VersionedDiagnostics(
   val documentVersion: Long,
   val document: DiagnosticDocument,
@@ -64,6 +89,11 @@ data class VersionedDiagnostics(
  *
  * The range is only meaningful for [version] of the document at [documentIndex]; a consumer that applies it later
  * must confirm that the version is still current.
+ *
+ * @property documentIndex the tab index of the document that contains the location.
+ * @property uri the identity of that document.
+ * @property version the snapshot version the range was computed for.
+ * @property range the UTF-16 offsets of the location in that version.
  */
 data class NavigationTarget(
   val documentIndex: Int,
@@ -91,6 +121,7 @@ class WorkspaceSession {
   private var activeIndex: Int? = null
   private var nextScratchNumber = 1
 
+  /** The current immutable view of the workspace. */
   @Synchronized
   fun snapshot(): WorkspaceSnapshot =
     WorkspaceSnapshot(
@@ -124,7 +155,7 @@ class WorkspaceSession {
     return open(URI.create("untitled:Xide-$number.vxs"), defaultScratchText(number))
   }
 
-  /** Loads a physical Visual X# source file without tying namespace identity to its directory layout. */
+  /** Loads a source file of a supported language without tying namespace identity to its directory layout. */
   @Synchronized
   fun openFile(path: Path): WorkspaceSnapshot {
     val absolute = validateSourcePath(path, mustExist = true)
@@ -163,6 +194,11 @@ class WorkspaceSession {
     }
   }
 
+  /**
+   * Makes the document at [index] the one shown in the editor.
+   *
+   * @throws IllegalArgumentException when no document has that index.
+   */
   @Synchronized
   fun select(index: Int): WorkspaceSnapshot {
     require(index in entries.indices) { "index must identify an open document" }
@@ -242,6 +278,60 @@ class WorkspaceSession {
     return NavigationTarget(targetIndex, snapshot.uri, snapshot.version, range)
   }
 
+  /**
+   * Closes the document at [index].
+   *
+   * A document with unsaved changes is closed only when [discardChanges] is true; otherwise the call returns null
+   * and leaves the workspace untouched, so the shell can ask before anything is lost. After a close the selection
+   * stays on the tab that takes the closed tab's place, or moves to the new last tab when the last one was closed,
+   * and the other tabs keep their order.
+   */
+  @Synchronized
+  fun close(index: Int, discardChanges: Boolean = false): WorkspaceSnapshot? {
+    require(index in entries.indices) { "index must identify an open document" }
+    val entry = entries[index]
+    if (!discardChanges && entry.savedVersion != entry.document.snapshot().version) return null
+    val active = activeIndex
+    entries.removeAt(index)
+    activeIndex =
+      when {
+        entries.isEmpty() -> null
+        active == null -> null
+        active > index -> active - 1
+        active == index -> minOf(index, entries.lastIndex)
+        else -> active
+      }
+    return snapshot()
+  }
+
+  /**
+   * The most severe problem on each zero-based line of the document at [index], for the editor gutter.
+   *
+   * Markers follow the same trust rule as [locate]: they are produced only while the diagnostics describe the
+   * document's current version and the document is saved and unmodified, and only for locations that name this
+   * document's own file. Anything else yields no markers rather than markers on the wrong lines.
+   */
+  @Synchronized
+  fun lineMarkers(index: Int): Map<Int, DiagnosticSeverity> {
+    val entry = entries.getOrNull(index) ?: return emptyMap()
+    val snapshot = entry.document.snapshot()
+    val diagnostics = entry.diagnostics ?: return emptyMap()
+    if (diagnostics.documentVersion != snapshot.version || entry.savedVersion != snapshot.version) return emptyMap()
+    val path = entry.filePath ?: return emptyMap()
+    val lineCount = snapshot.lineMap().lineCount
+    val markers = HashMap<Int, DiagnosticSeverity>()
+    for (diagnostic in diagnostics.document.diagnostics) {
+      val location = diagnostic.primaryLocation ?: continue
+      val source = resolveSourceIdentity(location.source, path) ?: continue
+      if (!samePath(source, path)) continue
+      val line = location.range.start.line
+      if (line >= lineCount.toUInt()) continue
+      // Severities are declared from most to least severe, so the smaller ordinal wins.
+      markers.merge(line.toInt(), diagnostic.severity) { current, added -> if (added < current) added else current }
+    }
+    return markers
+  }
+
   /** Removes results for one source, for example when a check is cancelled or the compiler crashes. */
   @Synchronized
   fun clearDiagnostics(uri: URI): Boolean {
@@ -283,7 +373,9 @@ class WorkspaceSession {
 
   private fun validateSourcePath(path: Path, mustExist: Boolean): Path {
     val absolute = path.toAbsolutePath().normalize()
-    require(absolute.fileName.toString().endsWith(".vxs")) { "Visual X# source files must use the exact .vxs extension" }
+    require(SourceLanguage.of(absolute) != null) {
+      "Xide opens sources of these languages: ${SourceLanguage.supportedDescription()}"
+    }
     if (mustExist) require(Files.isRegularFile(absolute)) { "source path must identify a regular file" }
     require(absolute.parent != null) { "source path must have a parent directory" }
     return absolute
