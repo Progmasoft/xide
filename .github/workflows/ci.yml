@@ -21,7 +21,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "25"
-      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
       # Windows checkouts do not preserve the Unix executable bit reliably. Invoke
       # the pinned wrapper through Bash so CI depends on its content, not NTFS mode.
       - name: Test and verify every module
