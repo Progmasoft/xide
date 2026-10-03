@@ -3,13 +3,18 @@
  * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
  */
 
-package com.progmasoft.xide.syntax
+package com.progmasoft.xide.psi
+
+import com.progmasoft.xide.syntax.Token
+import com.progmasoft.xide.syntax.TokenKind
+import com.progmasoft.xide.syntax.Tokenizer
+import com.progmasoft.xide.syntax.checkTokens
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class GroovyTokenizerTest {
-  private val tokenizer = GroovyTokenizer
+class GroovyLexerTokenizerTest {
+  private val tokenizer = GroovyLexerTokenizer
   private val dollar = "$"
 
   @Test
@@ -22,9 +27,20 @@ class GroovyTokenizerTest {
 
   @Test
   fun groovyAddsItsOwnKeywordsToJavas() {
-    for (keyword in listOf("def", "in", "as", "trait", "var", "class", "return", "instanceof")) {
+    for (keyword in listOf("def", "in", "as", "trait", "class", "return", "instanceof")) {
       tokenizer.assertPieces(keyword, K to keyword)
     }
+    // Contextual words are keywords only where a declaration or a statement follows; they are common names
+    // in build scripts.
+    assertEquals(K, tokenizer.kindOf("var total = 1", "var"))
+    assertEquals(K, tokenizer.kindOf("record Point(int x) {}", "record"))
+    assertEquals(K, tokenizer.kindOf("sealed class Shape permits Circle {}", "sealed"))
+    assertEquals(K, tokenizer.kindOf("sealed class Shape permits Circle {}", "permits"))
+    tokenizer.assertPieces("var", I to "var")
+    assertEquals(I, tokenizer.kindOf("var = 1", "var"))
+    assertEquals(I, tokenizer.kindOf("record.save()", "record"))
+    assertEquals(I, tokenizer.kindOf("module 'a:b'", "module"))
+    assertEquals(I, tokenizer.kindOf("exclude module: 'x'", "module"))
     // After a member selector a reserved word is a property name.
     assertEquals(I, tokenizer.kindOf("config.default", "default"))
     assertEquals(I, tokenizer.kindOf("config?.class", "class"))
@@ -61,8 +77,9 @@ class GroovyTokenizerTest {
     tokenizer.assertPieces("a / b / c", I to "a", O to "/", I to "b", O to "/", I to "c")
     tokenizer.assertPieces("(a) / 2 / x", P to "(", I to "a", P to ")", O to "/", N to "2", O to "/", I to "x")
     tokenizer.assertPieces("a /= 2", I to "a", O to "/=", N to "2")
-    // With no closing slash on the line it is division even where a string could start.
-    tokenizer.assertPieces("x = / 2", I to "x", O to "=", O to "/", N to "2")
+    // Where a value cannot be divided the slash opens a slashy string, closed or not: that is how Groovy reads
+    // it, and a slashy string may continue on the next line.
+    tokenizer.assertPieces("x = / 2", I to "x", O to "=", S to "/ 2")
   }
 
   @Test

@@ -3,13 +3,26 @@
  * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
  */
 
-package com.progmasoft.xide.syntax
+package com.progmasoft.xide.psi
+
+import com.progmasoft.xide.syntax.Token
+import com.progmasoft.xide.syntax.TokenKind
+import com.progmasoft.xide.syntax.Tokenizer
+import com.progmasoft.xide.syntax.checkTokens
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class KotlinTokenizerTest {
-  private val tokenizer = KotlinTokenizer
+class KotlinLexerTokenizerTest {
+  private val tokenizer = KotlinLexerTokenizer
+
+  /** Words that are keywords in every position. */
+  private val hardKeywords =
+    listOf(
+      "as", "break", "class", "continue", "do", "else", "false", "for", "fun", "if", "in", "interface", "is",
+      "null", "object", "package", "return", "super", "this", "throw", "true", "try", "typealias", "typeof", "val",
+      "var", "when", "while",
+    )
   private val dollar = "$"
   private val raw = "\"\"\""
 
@@ -24,7 +37,7 @@ class KotlinTokenizerTest {
 
   @Test
   fun hardKeywordsAreKeywordsEverywhere() {
-    for (keyword in KotlinTokenizer.hardKeywords) {
+    for (keyword in hardKeywords) {
       tokenizer.assertPieces(keyword, K to keyword)
       tokenizer.assertPieces("x = $keyword", I to "x", O to "=", K to keyword)
     }
@@ -163,7 +176,10 @@ class KotlinTokenizerTest {
     tokenizer.assertPieces("1.toString()", N to "1", P to ".", I to "toString", P to "(", P to ")")
     tokenizer.assertPieces("a?.b ?: c!!", I to "a", O to "?.", I to "b", O to "?:", I to "c", O to "!!")
     tokenizer.assertPieces("a === b !== c", I to "a", O to "===", I to "b", O to "!==", I to "c")
-    tokenizer.assertPieces("x !in y", I to "x", O to "!", K to "in", I to "y")
+    // `!in` and `!is` are single keywords of the language.
+    tokenizer.assertPieces("x !in y", I to "x", K to "!in", I to "y")
+    tokenizer.assertPieces("x !is T", I to "x", K to "!is", I to "T")
+    tokenizer.assertPieces("!input", O to "!", I to "input")
     tokenizer.assertPieces("String::length", I to "String", O to "::", I to "length")
   }
 
@@ -172,7 +188,8 @@ class KotlinTokenizerTest {
     tokenizer.assertPieces("fun `a test name`() {}", K to "fun", I to "`a test name`", P to "(", P to ")", P to "{",
       P to "}")
     tokenizer.assertPieces("`class`", I to "`class`")
-    tokenizer.assertPieces("`open\nx", I to "`open", I to "x")
+    // A backtick that is not closed on its line starts no name; the lexer reports it as a stray character.
+    tokenizer.assertPieces("`open\nx", BAD to "`", K to "open", I to "x")
   }
 
   @Test

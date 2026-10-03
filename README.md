@@ -35,7 +35,7 @@ CodeQL extraction covers Kotlin/JVM and GitHub Actions, not this retired toolkit
 
 ## Current foundation
 
-The renewed Kotlin/JVM foundation currently has four modules. `xide-document` provides:
+The renewed Kotlin/JVM foundation currently has five modules. `xide-document` provides:
 
 - immutable, versioned document snapshots;
 - validated UTF-16 offset ranges and text edits;
@@ -70,20 +70,27 @@ bottom. UI updates pass through the versioned document API rather than maintaini
   Python (`.py`) sources open, edit, and save as text. Analysis is a separate capability: the compiler `Check` action
   is connected for Visual X# only, and it is disabled for the other languages rather than pretending to check them.
   Until the Visual X# toolchain settles, Kotlin is the first language the editor work targets.
-- **Syntax colouring.** `xide-syntax` splits a source text into lexical tokens, and the editor colours keywords,
-  numbers, strings with their escapes and embedded expressions, comments, documentation comments and annotations
-  for all five languages. The tokenizers are total: any text, however malformed, yields tokens that cover every
+- **Syntax colouring.** The editor colours keywords, numbers, strings with their escapes and embedded expressions,
+  comments, documentation comments and annotations for all five languages. Kotlin, Java and Groovy are split into
+  tokens by the IntelliJ lexers of `xide-psi`; Visual X# and Python by the tokenizers of `xide-syntax`. The
+  tokenizers are total: any text, however malformed, yields tokens that cover every
   non-blank character exactly once, which `checkTokens` verifies. Colouring is lexical only; names are not coloured
   by meaning. Soft keywords such as Kotlin's `value` or Python's `match` are recognized from neighbouring tokens,
   so an unusual position may stay uncoloured. A text longer than 400,000 UTF-16 code units is shown uncoloured.
+- **Syntax trees.** `xide-psi` runs the IntelliJ PSI platform without the IDE. `SourceAnalyzer` parses Kotlin and
+  Java with the parsers of the Kotlin embeddable compiler and Groovy with the IntelliJ Groovy parser, and returns
+  the syntax errors and a declaration outline of a text. Visual X# has its own PSI language with a structural
+  parser: it recognizes namespaces, `using` directives, types and members, keeps bodies opaque, and reports no
+  errors, because Visual X# errors come from the compiler. The editor does not show the outline or the PSI syntax
+  errors yet, and there is no resolution or type information.
 - **Problems and status.** The Problems tool window lists the active document's diagnostics with their severity,
   code and location. The status bar shows the current activity, problem counts, the caret position, the line
   separator, the encoding, and the language.
 - **Shortcuts.** `Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `Ctrl+W`/`Ctrl+F4` act on files and tabs; `Alt+1` and `Alt+6` toggle
   the Project and Problems tool windows.
 
-Syntax highlighting, code analysis for Kotlin, Java and Groovy, resizable tool windows, and file operations in the
-Project tool window are not implemented yet.
+Semantic code analysis for Kotlin, Java and Groovy, resizable tool windows, and file operations in the Project tool
+window are not implemented yet.
 
 Selecting a problem reveals its primary location in the editor. A location is resolved only while it is provably the
 text the compiler read: the checked document must still have the version its diagnostics were produced for, and the
@@ -153,3 +160,7 @@ linking with independent components under licenses of their choice, including pr
 and modifications to those files remain subject to MPL-2.0. See `LICENSE.txt` and
 `LICENSES/AdditionRef-Progmasoft-Exception-1.1.txt`. The separate Progmasoft Patent Grant, Version 1.1, is documented in
 `PATENTS` and `LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.1.txt`.
+
+`third_party/` holds code from other projects under their own licenses. `third_party/intellij-groovy-psi` is the
+Groovy lexer and parser of IntelliJ IDEA Community Edition under the Apache License 2.0; its `UPSTREAM.md` records the
+origin and every change. See `THIRD_PARTY_NOTICES.txt`.

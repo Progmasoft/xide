@@ -3,13 +3,28 @@
  * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
  */
 
-package com.progmasoft.xide.syntax
+package com.progmasoft.xide.psi
+
+import com.progmasoft.xide.syntax.Token
+import com.progmasoft.xide.syntax.TokenKind
+import com.progmasoft.xide.syntax.Tokenizer
+import com.progmasoft.xide.syntax.checkTokens
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class JavaTokenizerTest {
-  private val tokenizer = JavaTokenizer
+class JavaLexerTokenizerTest {
+  private val tokenizer = JavaLexerTokenizer
+
+  /** Reserved words and literal words. */
+  private val keywords =
+    listOf(
+      "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue",
+      "default", "do", "double", "else", "enum", "extends", "false", "final", "finally", "float", "for", "goto", "if",
+      "implements", "import", "instanceof", "int", "interface", "long", "native", "new", "null", "package", "private",
+      "protected", "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this",
+      "throw", "throws", "transient", "true", "try", "void", "volatile", "while",
+    )
   private val block = "\"\"\""
 
   @Test
@@ -23,7 +38,7 @@ class JavaTokenizerTest {
 
   @Test
   fun reservedWordsAreKeywordsEverywhere() {
-    for (keyword in JavaTokenizer.keywords) {
+    for (keyword in keywords) {
       tokenizer.assertPieces(keyword, K to keyword)
       tokenizer.assertPieces("${keyword}_", I to "${keyword}_")
     }

@@ -14,3 +14,11 @@ path = ["branding/**", "modules/app/src/main/resources/com/progmasoft/xide/app/X
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Progmasoft <support@progmasoft.com>"
 SPDX-License-Identifier = "MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1"
+
+# Sources of IntelliJ IDEA Community Edition, adapted by third_party/intellij-groovy-psi/adapt.py. Two generated
+# files carry no copyright line of their own, so the annotation states it for the whole directory.
+[[annotations]]
+path = ["third_party/intellij-groovy-psi/src/main/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2000-2026 JetBrains s.r.o. and contributors"
+SPDX-License-Identifier = "Apache-2.0"
