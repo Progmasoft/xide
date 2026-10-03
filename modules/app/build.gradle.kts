@@ -43,7 +43,7 @@ dependencies {
     implementation(project(":modules:syntax"))
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.components:components-resources:1.11.0")
-    implementation("org.jetbrains.compose.material:material:1.11.0")
+    implementation("org.jetbrains.compose.material:material:1.12.1")
 
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.compose.ui:ui-test:1.11.0")
