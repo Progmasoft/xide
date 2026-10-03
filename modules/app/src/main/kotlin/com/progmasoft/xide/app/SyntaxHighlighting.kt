@@ -12,9 +12,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import com.progmasoft.xide.syntax.GroovyTokenizer
-import com.progmasoft.xide.syntax.JavaTokenizer
-import com.progmasoft.xide.syntax.KotlinTokenizer
+import com.progmasoft.xide.psi.PsiLanguage
+import com.progmasoft.xide.psi.SourceAnalyzer
 import com.progmasoft.xide.syntax.PythonTokenizer
 import com.progmasoft.xide.syntax.Token
 import com.progmasoft.xide.syntax.TokenKind
@@ -29,14 +28,19 @@ import com.progmasoft.xide.syntax.VisualXSharpTokenizer
  */
 internal const val MAXIMUM_HIGHLIGHTED_LENGTH: Int = 400_000
 
-/** The tokenizer that colours this language. */
+/**
+ * The tokenizer that colours this language.
+ *
+ * Kotlin, Java and Groovy are coloured by the IntelliJ lexers of the PSI module; Visual X# and Python by the
+ * tokenizers of the syntax module.
+ */
 internal val SourceLanguage.tokenizer: Tokenizer
   get() =
     when (this) {
       SourceLanguage.VISUAL_XSHARP -> VisualXSharpTokenizer
-      SourceLanguage.KOTLIN -> KotlinTokenizer
-      SourceLanguage.JAVA -> JavaTokenizer
-      SourceLanguage.GROOVY -> GroovyTokenizer
+      SourceLanguage.KOTLIN -> SourceAnalyzer.tokenizer(PsiLanguage.KOTLIN)
+      SourceLanguage.JAVA -> SourceAnalyzer.tokenizer(PsiLanguage.JAVA)
+      SourceLanguage.GROOVY -> SourceAnalyzer.tokenizer(PsiLanguage.GROOVY)
       SourceLanguage.PYTHON -> PythonTokenizer
     }
 

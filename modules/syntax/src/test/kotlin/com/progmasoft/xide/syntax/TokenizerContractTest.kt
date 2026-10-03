@@ -22,13 +22,10 @@ class TokenizerContractTest {
   private val tokenizers: Map<String, Tokenizer> =
     mapOf(
       "Visual X#" to VisualXSharpTokenizer,
-      "Kotlin" to KotlinTokenizer,
-      "Java" to JavaTokenizer,
-      "Groovy" to GroovyTokenizer,
       "Python" to PythonTokenizer,
     )
 
-  /** Pieces that open, close and confuse the lexical constructs of all five languages. */
+  /** Pieces that open, close and confuse the lexical constructs of the languages Xide colours. */
   private val fragments: List<String> =
     listOf(
       "\"", "'", "\"\"\"", "'''", "`", "\\", "\\\"", "\\n", "\\u00", "\\u0041", "$", "\${", "\$name", "}", "{", "{{",

@@ -26,8 +26,26 @@ under the Apache License 2.0:
 https://github.com/JetBrains/compose-multiplatform/blob/master/LICENSE.txt
 https://github.com/JetBrains/skiko/blob/master/LICENSE
 
+IntelliJ IDEA Community Edition and Kotlin
+------------------------------------------
+
+`xide-psi` builds syntax trees with the IntelliJ platform core, the Kotlin PSI and the Java PSI contained in
+`org.jetbrains.kotlin:kotlin-compiler-embeddable` 2.4.10, which Xide uses as a library dependency. Kotlin is licensed
+under the Apache License 2.0:
+https://github.com/JetBrains/kotlin/blob/master/license/LICENSE.txt
+
+`third_party/intellij-groovy-psi` contains source files of the Groovy lexer and parser and three platform files,
+copied from IntelliJ IDEA Community Edition at commit 58066824746c383116366e6a876c08a06f15c718 and modified for
+Xide. `third_party/intellij-groovy-psi/UPSTREAM.md` lists every file and every change. The files are licensed under
+the Apache License 2.0, see `LICENSES/Apache-2.0.txt`:
+https://github.com/JetBrains/intellij-community
+
+    This software includes code from IntelliJ IDEA
+    Copyright (C) JetBrains s.r.o.
+    https://www.jetbrains.com/idea/
+
 These notices do not change the `MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1` license expression used by Xide
-source files.
+source files. Files under `third_party/` keep the license of their origin.
 
 GNUstep Base
 ------------
