@@ -34,7 +34,7 @@ jobs:
           java-version: '25'
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
         if: matrix.language == 'java-kotlin'
-      - uses: github/codeql-action/init@7999b86c43a865dc79d8923397f35af22de63401 # v4
+      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build_mode }}
