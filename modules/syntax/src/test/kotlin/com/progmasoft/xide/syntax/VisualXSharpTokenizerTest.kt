@@ -21,6 +21,39 @@ class VisualXSharpTokenizerTest {
   }
 
   @Test
+  fun matchGuardAndEnumAreKeywords() {
+    tokenizer.assertPieces(
+      "match (kind) { 0 -> 1, _ -> 2 }",
+      K to "match", P to "(", I to "kind", P to ")", P to "{", N to "0", O to "->", N to "1", P to ",", I to "_",
+      O to "->", N to "2", P to "}",
+    )
+    tokenizer.assertPieces(
+      "guard (ready) else { return; }",
+      K to "guard", P to "(", I to "ready", P to ")", K to "else", P to "{", K to "return", P to ";", P to "}",
+    )
+    tokenizer.assertPieces(
+      "enum Status = byte { None, Ready = 2 }",
+      K to "enum", I to "Status", O to "=", K to "byte", P to "{", I to "None", P to ",", I to "Ready", O to "=",
+      N to "2", P to "}",
+    )
+  }
+
+  @Test
+  fun aWordThatOnlyContainsAKeywordIsAName() {
+    tokenizer.assertPieces("matcher guarded enumerate", I to "matcher", I to "guarded", I to "enumerate")
+  }
+
+  @Test
+  fun theKeywordsAreThoseOfTheCompilerLexer() {
+    // The list of `Compiler/Haskell/Syntax/src/Visual/XSharp/Lexer.hs` in the language repository.
+    val expected =
+      "and auto bool break byte char class continue do double else enum false final float for guard if int " +
+        "internal is lfloat long longint match namespace not null or private protected public return sfloat " +
+        "static template true typename ubyte uint ulong ulongint unit ushort void while"
+    assertEquals(expected.split(' ').toSet(), tokenizer.keywords)
+  }
+
+  @Test
   fun aDoubleDashStartsACommentToTheEndOfTheLine() {
     tokenizer.assertPieces("int a = 1; -- the count\nb", K to "int", I to "a", O to "=", N to "1", P to ";",
       C to "-- the count", I to "b")
