@@ -81,13 +81,18 @@ bottom. UI updates pass through the versioned document API rather than maintaini
   Java with the parsers of the Kotlin embeddable compiler and Groovy with the IntelliJ Groovy parser, and returns
   the syntax errors and a declaration outline of a text. Visual X# has its own PSI language with a structural
   parser: it recognizes namespaces, `using` directives, types and members, keeps bodies opaque, and reports no
-  errors, because Visual X# errors come from the compiler. The editor does not show the outline or the PSI syntax
-  errors yet, and there is no resolution or type information.
+  errors, because Visual X# errors come from the compiler. The editor does not show the PSI syntax errors yet, and
+  there is no resolution or type information.
+- **Structure tool window.** Lists the declarations of the active Visual X#, Kotlin, Java or Groovy document as an
+  indented list, from the outline of `SourceAnalyzer`. Selecting a declaration moves the caret to its start, and
+  the declaration around the caret is marked. The list is read again a moment after an edit, on a background
+  thread, and only while the tool window is open; a row of an older text does not navigate. Python has no parser
+  and therefore no structure. The window is closed when Xide starts.
 - **Problems and status.** The Problems tool window lists the active document's diagnostics with their severity,
   code and location. The status bar shows the current activity, problem counts, the caret position, the line
   separator, the encoding, and the language.
-- **Shortcuts.** `Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `Ctrl+W`/`Ctrl+F4` act on files and tabs; `Alt+1` and `Alt+6` toggle
-  the Project and Problems tool windows.
+- **Shortcuts.** `Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `Ctrl+W`/`Ctrl+F4` act on files and tabs; `Alt+1`, `Alt+7` and
+  `Alt+6` toggle the Project, Structure and Problems tool windows.
 
 Semantic code analysis for Kotlin, Java and Groovy, resizable tool windows, and file operations in the Project tool
 window are not implemented yet.

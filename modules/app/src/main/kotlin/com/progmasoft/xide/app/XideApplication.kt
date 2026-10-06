@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -34,11 +35,13 @@ import androidx.compose.ui.unit.dp
 import com.progmasoft.xide.compiler.CompilerRequest
 import com.progmasoft.xide.compiler.SourceLocation
 import com.progmasoft.xide.compiler.VisualXSharpCompilerClient
+import com.progmasoft.xide.document.TextRange
 import java.awt.FileDialog
 import java.awt.Frame
 import java.nio.file.Path
 import javax.swing.JFileChooser
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -46,7 +49,7 @@ import kotlinx.coroutines.withContext
  * The Xide desktop shell.
  *
  * The window follows the familiar IDE arrangement: a toolbar on top, a stripe of tool-window buttons on the left
- * edge, the Project tool window beside it, the tabbed editor in the centre with the Problems tool window below it,
+ * edge, the Project and Structure tool windows beside it, the tabbed editor in the centre with the Problems tool window below it,
  * and a status bar at the bottom. All document state lives in [session]; the shell only renders immutable
  * snapshots and forwards user intent.
  */
@@ -70,9 +73,22 @@ fun XideApplication(
   var caretOffset by remember { mutableIntStateOf(0) }
   // The tab whose close was requested while it had unsaved changes, identified by its document URI.
   var pendingClose by remember { mutableStateOf<java.net.URI?>(null) }
+  // The declarations of the active document, for the version they were last read from.
+  var structure by remember { mutableStateOf<DocumentStructure?>(null) }
   val scope = rememberCoroutineScope()
 
   val activeDocument = workspace.activeDocument
+  val structureVisible = layout.isVisible(ToolWindowId.STRUCTURE)
+  // The structure follows the text only while its tool window is open. An edit cancels the read that was waiting
+  // for it, so a burst of typing parses once, after it pauses.
+  LaunchedEffect(structureVisible, activeDocument?.snapshot?.uri, activeDocument?.snapshot?.version) {
+    val document = activeDocument
+    if (!structureVisible || document == null) return@LaunchedEffect
+    if (structure?.isCurrentFor(document.snapshot) == true) return@LaunchedEffect
+    if (structure?.uri == document.snapshot.uri) delay(STRUCTURE_DELAY_MILLIS)
+    val read = withContext(Dispatchers.Default) { documentStructure(document.language, document.snapshot) }
+    structure = read
+  }
   val projectRows = remember(project, projectRevision) { project?.rows().orEmpty() }
   val markers = remember(workspace) { workspace.activeIndex?.let(session::lineMarkers).orEmpty() }
 
@@ -86,6 +102,19 @@ fun XideApplication(
     workspace = session.select(target.documentIndex)
     navigation = NavigationRequest((navigation?.serial ?: 0L) + 1L, target)
     activity = "Showing ${workspace.activeDocument?.title}"
+  }
+
+  fun showStructureRow(row: StructureRow) {
+    val index = workspace.activeIndex ?: return
+    val snapshot = workspace.activeDocument?.snapshot ?: return
+    if (structure?.isCurrentFor(snapshot) != true) {
+      // The offsets of the row belong to an earlier text; the list is replaced as soon as this one is read.
+      activity = "The structure is being read again"
+      return
+    }
+    val target = NavigationTarget(index, snapshot.uri, snapshot.version, TextRange(row.start, row.start))
+    navigation = NavigationRequest((navigation?.serial ?: 0L) + 1L, target)
+    activity = "Showing ${row.name}"
   }
 
   fun openPath(path: Path) {
@@ -239,6 +268,7 @@ fun XideApplication(
     if (event.isAltPressed && !event.isCtrlPressed) {
       when (event.key) {
         Key.One -> layout = layout.toggle(ToolWindowId.PROJECT)
+        Key.Seven -> layout = layout.toggle(ToolWindowId.STRUCTURE)
         Key.Six -> layout = layout.toggle(ToolWindowId.PROBLEMS)
         else -> return false
       }
@@ -272,18 +302,39 @@ fun XideApplication(
     Row(Modifier.weight(1f).fillMaxWidth()) {
       ToolWindowStripe(layout, onToggle = { layout = layout.toggle(it) })
       VerticalBorder()
-      if (layout.isVisible(ToolWindowId.PROJECT)) {
-        ProjectToolWindow(
-          tree = project,
-          rows = projectRows,
-          activeFile = activeDocument?.filePath,
-          enabled = !busy,
-          onToggleDirectory = ::toggleDirectory,
-          onOpenFile = ::openProjectEntry,
-          onOpenFolder = ::openFolder,
-          onRefresh = ::refreshProject,
-          onHide = { layout = layout.toggle(ToolWindowId.PROJECT) },
-        )
+      val projectVisible = layout.isVisible(ToolWindowId.PROJECT)
+      if (projectVisible || structureVisible) {
+        // The left tool windows share one column; two open ones divide its height equally.
+        Column(Modifier.width(XideMetrics.projectWidth).fillMaxHeight()) {
+          if (projectVisible) {
+            Box(Modifier.weight(1f)) {
+              ProjectToolWindow(
+                tree = project,
+                rows = projectRows,
+                activeFile = activeDocument?.filePath,
+                enabled = !busy,
+                onToggleDirectory = ::toggleDirectory,
+                onOpenFile = ::openProjectEntry,
+                onOpenFolder = ::openFolder,
+                onRefresh = ::refreshProject,
+                onHide = { layout = layout.toggle(ToolWindowId.PROJECT) },
+              )
+            }
+          }
+          if (projectVisible && structureVisible) HorizontalBorder()
+          if (structureVisible) {
+            Box(Modifier.weight(1f)) {
+              StructureToolWindow(
+                document = activeDocument,
+                structure = structure,
+                caretOffset = caretOffset,
+                enabled = !busy,
+                onShowRow = ::showStructureRow,
+                onHide = { layout = layout.toggle(ToolWindowId.STRUCTURE) },
+              )
+            }
+          }
+        }
         VerticalBorder()
       }
       Column(Modifier.weight(1f).fillMaxHeight()) {
@@ -344,6 +395,9 @@ fun XideApplication(
     )
   }
 }
+
+/** How long the structure waits after an edit before it is read again, so that typing does not parse per key. */
+private const val STRUCTURE_DELAY_MILLIS: Long = 200
 
 @Composable
 private fun HorizontalBorder() {
