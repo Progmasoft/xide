@@ -59,7 +59,10 @@ class ShellModelTest {
   fun everyToolWindowHasAnEdgeAndATitle() {
     assertEquals(ToolWindowAnchor.LEFT, ToolWindowId.PROJECT.anchor)
     assertEquals(ToolWindowAnchor.BOTTOM, ToolWindowId.PROBLEMS.anchor)
-    assertEquals(listOf("Project", "Problems"), ToolWindowId.entries.map { it.title })
+    assertEquals(ToolWindowAnchor.LEFT, ToolWindowId.STRUCTURE.anchor)
+    assertEquals(listOf("Project", "Structure", "Problems"), ToolWindowId.entries.map { it.title })
+    // Structure is opened on demand; the shell starts with the two windows it always had.
+    assertEquals(setOf(ToolWindowId.PROJECT, ToolWindowId.PROBLEMS), ToolWindowLayout().visible)
   }
 
   @Test

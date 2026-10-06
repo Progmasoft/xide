@@ -126,6 +126,7 @@ private fun StripeButton(id: ToolWindowId, layout: ToolWindowLayout, onToggle: (
     Canvas(Modifier.size(16.dp)) {
       when (id) {
         ToolWindowId.PROJECT -> drawFolderGlyph(XideColors.text)
+        ToolWindowId.STRUCTURE -> drawStructureGlyph(XideColors.text)
         ToolWindowId.PROBLEMS -> drawProblemGlyph(XideColors.text)
       }
     }
@@ -151,6 +152,20 @@ private fun DrawScope.drawFolderGlyph(color: Color) {
   )
 }
 
+/** Three lines, the lower two indented: a declaration with what it encloses. */
+private fun DrawScope.drawStructureGlyph(color: Color) {
+  val stroke = size.minDimension / 10f
+  val lines = listOf(0.10f to 0.24f, 0.34f to 0.50f, 0.34f to 0.76f)
+  for ((left, height) in lines) {
+    drawLine(
+      color,
+      Offset(size.width * left, size.height * height),
+      Offset(size.width * 0.92f, size.height * height),
+      strokeWidth = stroke,
+    )
+  }
+}
+
 /** A circle with an exclamation mark, the usual sign for a list of problems. */
 private fun DrawScope.drawProblemGlyph(color: Color) {
   val stroke = size.minDimension / 10f
@@ -166,7 +181,7 @@ private fun DrawScope.drawProblemGlyph(color: Color) {
 
 /** The title row every tool window starts with: its name, optional detail, its own actions and a hide control. */
 @Composable
-private fun ToolWindowHeader(title: String, detail: String?, onHide: () -> Unit, actions: @Composable () -> Unit = {}) {
+internal fun ToolWindowHeader(title: String, detail: String?, onHide: () -> Unit, actions: @Composable () -> Unit = {}) {
   Row(
     Modifier.fillMaxWidth().height(XideMetrics.headerHeight).padding(start = 12.dp, end = 4.dp),
     verticalAlignment = Alignment.CenterVertically,
@@ -216,7 +231,7 @@ internal fun ProjectToolWindow(
   onRefresh: () -> Unit,
   onHide: () -> Unit,
 ) {
-  Column(Modifier.width(XideMetrics.projectWidth).fillMaxHeight().background(XideColors.panel)) {
+  Column(Modifier.width(XideMetrics.projectWidth).fillMaxSize().background(XideColors.panel)) {
     ToolWindowHeader(ToolWindowId.PROJECT.title, tree?.rootName, onHide) {
       if (tree != null) {
         BasicText(

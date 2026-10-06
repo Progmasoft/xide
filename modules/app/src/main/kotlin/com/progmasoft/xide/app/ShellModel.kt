@@ -22,6 +22,7 @@ enum class ToolWindowAnchor {
  */
 enum class ToolWindowId(val title: String, val anchor: ToolWindowAnchor) {
   PROJECT("Project", ToolWindowAnchor.LEFT),
+  STRUCTURE("Structure", ToolWindowAnchor.LEFT),
   PROBLEMS("Problems", ToolWindowAnchor.BOTTOM),
 }
 
