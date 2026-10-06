@@ -22,10 +22,10 @@ object VisualXSharpTokenizer : Tokenizer {
   /** The reserved words of the language, as the compiler's lexer lists them. */
   val keywords: Set<String> =
     setOf(
-      "and", "auto", "bool", "break", "byte", "char", "class", "continue", "do", "double", "else", "false", "final",
-      "float", "for", "if", "int", "internal", "is", "lfloat", "long", "longint", "namespace", "not", "null", "or",
-      "private", "protected", "public", "return", "sfloat", "static", "template", "true", "typename", "ubyte",
-      "uint", "ulong", "ulongint", "unit", "ushort", "void", "while",
+      "and", "auto", "bool", "break", "byte", "char", "class", "continue", "do", "double", "else", "enum", "false",
+      "final", "float", "for", "guard", "if", "int", "internal", "is", "lfloat", "long", "longint", "match",
+      "namespace", "not", "null", "or", "private", "protected", "public", "return", "sfloat", "static", "template",
+      "true", "typename", "ubyte", "uint", "ulong", "ulongint", "unit", "ushort", "void", "while",
     )
 
   /** Longer signs come before their prefixes so the longest one wins. */
