@@ -127,6 +127,30 @@ class VisualXSharpTokenizerTest {
   }
 
   @Test
+  fun aMethodReferenceIsOneSignBetweenTwoNames() {
+    tokenizer.assertPieces(
+      "auto next = Counter::Next;",
+      K to "auto", I to "next", O to "=", I to "Counter", O to "::", I to "Next", P to ";",
+    )
+    tokenizer.assertPieces(
+      "Apply(Demo.Counter::Next)",
+      I to "Apply", P to "(", I to "Demo", P to ".", I to "Counter", O to "::", I to "Next", P to ")",
+    )
+    // One colon is still the punctuation of a conditional.
+    tokenizer.assertPieces("a ? b : c", I to "a", O to "?", I to "b", P to ":", I to "c")
+    tokenizer.assertPieces("a :: : b", I to "a", O to "::", P to ":", I to "b")
+  }
+
+  @Test
+  fun aConditionalSelectsStrings() {
+    tokenizer.assertPieces(
+      "String kind = count > 0 ? \"some\" : \"none\";",
+      I to "String", I to "kind", O to "=", I to "count", O to ">", N to "0", O to "?", S to "\"some\"",
+      P to ":", S to "\"none\"", P to ";",
+    )
+  }
+
+  @Test
   fun everyCompilerKeywordIsAKeyword() {
     for (keyword in VisualXSharpTokenizer.keywords) {
       tokenizer.assertPieces(keyword, K to keyword)
