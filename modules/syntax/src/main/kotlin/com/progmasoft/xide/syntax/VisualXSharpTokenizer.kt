@@ -16,7 +16,8 @@ package com.progmasoft.xide.syntax
  * - a comment whose text starts with `|` or `!` is a documentation comment;
  * - `[[` and `[=[` start a raw string with the same long-bracket rule, in which nothing is an escape;
  * - a quoted string may continue over line breaks and has backslash escapes;
- * - `'` separates digit groups inside a number and otherwise starts a character literal.
+ * - `'` separates digit groups inside a number and otherwise starts a character literal;
+ * - `::` is one sign, the method reference of `Type::Method`, and not two colons.
  */
 object VisualXSharpTokenizer : Tokenizer {
   /** The reserved words of the language, as the compiler's lexer lists them. */
@@ -32,7 +33,7 @@ object VisualXSharpTokenizer : Tokenizer {
   private val operators: List<String> =
     listOf(
       "...", "<<=", ">>=", "**=", "//=", "??=",
-      "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "??", "?:", "==", "\\=", "<=", ">=", "&&", "||", "//", "->",
+      "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "??", "?:", "::", "==", "\\=", "<=", ">=", "&&", "||", "//", "->",
       "**", "++",
       "=", "+", "-", "*", "/", "%", "&", "|", "^", "<", ">", "!", "?", "\\",
     )
