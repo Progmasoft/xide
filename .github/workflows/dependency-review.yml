@@ -5,7 +5,7 @@ name: Dependency Review
 
 # Looks at the dependencies a pull request adds or changes, and fails when
 # one of them has a known vulnerability of high severity or worse.
-# Dependabot watches what is already there; this holds what comes in.
+# Dependabot alerts report what is already there; this holds what comes in.
 
 on:
   pull_request:
