@@ -32,7 +32,7 @@ import org.jetbrains.plugins.groovy.lang.psi.GroovyElementTypes
  * An outline lists the declarations a reader navigates by: the package, the types and their members. Local
  * declarations, imports and statements are not part of it.
  *
- * Kotlin and Java have PSI classes that say what a node is. The Groovy and Visual X# trees consist of generic
+ * Kotlin and Java have PSI classes that say what a node is. The Groovy and Tala trees consist of generic
  * elements, so their declarations are recognized by element type.
  */
 internal object Outlines {
@@ -42,7 +42,7 @@ internal object Outlines {
       PsiLanguage.KOTLIN -> kotlin(file)
       PsiLanguage.JAVA -> java(file)
       PsiLanguage.GROOVY -> groovy(file)
-      PsiLanguage.VISUAL_XSHARP -> visualXSharp(file)
+      PsiLanguage.TALA -> tala(file)
     }
 
   private fun entry(kind: OutlineKind, name: String, element: PsiElement, children: List<OutlineEntry> = emptyList()) =
@@ -158,35 +158,35 @@ internal object Outlines {
     }
   }
 
-  // Visual X#
+  // Tala
 
-  private fun visualXSharp(file: PsiFile): List<OutlineEntry> {
+  private fun tala(file: PsiFile): List<OutlineEntry> {
     val result = ArrayList<OutlineEntry>()
-    for (child in children(file)) visualXSharpDeclaration(child, result)
+    for (child in children(file)) talaDeclaration(child, result)
     return result
   }
 
-  private fun visualXSharpDeclaration(element: PsiElement, into: MutableList<OutlineEntry>) {
+  private fun talaDeclaration(element: PsiElement, into: MutableList<OutlineEntry>) {
     when (element.node.elementType) {
-      VisualXSharpTypes.NAMESPACE_DECLARATION ->
-        into += entry(OutlineKind.NAMESPACE, nameOf(element, VisualXSharpTypes.NAME), element)
-      VisualXSharpTypes.TYPE_DECLARATION -> {
+      TalaTypes.NAMESPACE_DECLARATION ->
+        into += entry(OutlineKind.NAMESPACE, nameOf(element, TalaTypes.NAME), element)
+      TalaTypes.TYPE_DECLARATION -> {
         val members = ArrayList<OutlineEntry>()
         for (body in children(element)) {
-          if (body.node.elementType == VisualXSharpTypes.TYPE_BODY) {
-            for (member in children(body)) visualXSharpDeclaration(member, members)
+          if (body.node.elementType == TalaTypes.TYPE_BODY) {
+            for (member in children(body)) talaDeclaration(member, members)
           }
         }
-        into += entry(OutlineKind.TYPE, nameOf(element, VisualXSharpTypes.NAME), element, members)
+        into += entry(OutlineKind.TYPE, nameOf(element, TalaTypes.NAME), element, members)
       }
-      VisualXSharpTypes.CALLABLE_DECLARATION ->
-        into += entry(OutlineKind.CALLABLE, nameOf(element, VisualXSharpTypes.NAME), element)
-      VisualXSharpTypes.PROPERTY_DECLARATION, VisualXSharpTypes.FIELD_DECLARATION ->
+      TalaTypes.CALLABLE_DECLARATION ->
+        into += entry(OutlineKind.CALLABLE, nameOf(element, TalaTypes.NAME), element)
+      TalaTypes.PROPERTY_DECLARATION, TalaTypes.FIELD_DECLARATION ->
         // A stretch of tokens that names nothing is not a declaration a reader navigates to.
-        if (children(element).any { it.node.elementType == VisualXSharpTypes.NAME }) {
-          into += entry(OutlineKind.PROPERTY, nameOf(element, VisualXSharpTypes.NAME), element)
+        if (children(element).any { it.node.elementType == TalaTypes.NAME }) {
+          into += entry(OutlineKind.PROPERTY, nameOf(element, TalaTypes.NAME), element)
         }
-      VisualXSharpTypes.INITIALIZER -> into += entry(OutlineKind.INITIALIZER, "static", element)
+      TalaTypes.INITIALIZER -> into += entry(OutlineKind.INITIALIZER, "static", element)
     }
   }
 

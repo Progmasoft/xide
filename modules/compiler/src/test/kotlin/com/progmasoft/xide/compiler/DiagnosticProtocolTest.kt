@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 class DiagnosticProtocolTest {
   @Test
   fun decodesTheStableEmptyDocument() {
-    val document = DiagnosticProtocol.decode(byteArrayOf(0x56, 0x58, 0x44, 0x47, 1, 0, 0, 0, 0, 0, 0, 0))
+    val document = DiagnosticProtocol.decode(byteArrayOf(0x54, 0x41, 0x44, 0x47, 1, 0, 0, 0, 0, 0, 0, 0))
 
     assertTrue(document.diagnostics.isEmpty())
   }
@@ -27,7 +27,7 @@ class DiagnosticProtocolTest {
         .header(1)
         .byte(DiagnosticStage.TYPE_CHECKER.ordinal)
         .byte(DiagnosticSeverity.ERROR.ordinal)
-        .text("VXT204")
+        .text("TAT0204")
         .text("argument {actual} cannot be converted to {expected}")
         .count(2)
         .text("actual")
@@ -35,14 +35,14 @@ class DiagnosticProtocolTest {
         .text("expected")
         .text("int")
         .boolean(true)
-        .location("C:/work/Main.vxs", 8, 11, 8, 16)
+        .location("C:/work/Main.tala", 8, 11, 8, 16)
         .count(1)
-        .location("C:/work/Library.vxs", 3, 4, 3, 10)
+        .location("C:/work/Library.tala", 3, 4, 3, 10)
         .text("parameter is declared here")
         .count(1)
         .text("Convert the argument")
         .count(1)
-        .location("C:/work/Main.vxs", 8, 11, 8, 16)
+        .location("C:/work/Main.tala", 8, 11, 8, 16)
         .text("value.ToInt()")
         .toByteArray()
 
@@ -50,7 +50,7 @@ class DiagnosticProtocolTest {
 
     assertEquals(DiagnosticStage.TYPE_CHECKER, diagnostic.stage)
     assertEquals(DiagnosticSeverity.ERROR, diagnostic.severity)
-    assertEquals("VXT204", diagnostic.code)
+    assertEquals("TAT0204", diagnostic.code)
     assertEquals(2, diagnostic.arguments.size)
     assertEquals("String", diagnostic.arguments.first().value)
     assertEquals(SourcePosition(8u, 11u), diagnostic.primaryLocation?.range?.start)
@@ -66,7 +66,7 @@ class DiagnosticProtocolTest {
         .header(1)
         .byte(DiagnosticStage.LEXER.ordinal)
         .byte(DiagnosticSeverity.WARNING.ordinal)
-        .text("VXL1")
+        .text("TAL0001")
         .text("bad 🧪 scalar")
         .count(0)
         .boolean(false)
@@ -217,7 +217,7 @@ class DiagnosticProtocolTest {
         .text("message")
         .count(0)
         .boolean(true)
-        .location("Main.vxs", 2, 0, 1, 0)
+        .location("Main.tala", 2, 0, 1, 0)
         .count(0)
         .count(0)
         .toByteArray()
@@ -287,7 +287,7 @@ internal class WireWriter {
   fun header(count: Int): WireWriter = rawHeader(1, 0, count)
 
   fun rawHeader(version: Int, flags: Int, count: Int): WireWriter =
-    byte('V'.code).byte('X'.code).byte('D'.code).byte('G'.code).u16(version).u16(flags).count(count)
+    byte('T'.code).byte('A'.code).byte('D'.code).byte('G'.code).u16(version).u16(flags).count(count)
 
   fun location(source: String, startLine: Int, startColumn: Int, endLine: Int, endColumn: Int): WireWriter =
     text(source).u32(startLine).u32(startColumn).u32(endLine).u32(endColumn)

@@ -54,8 +54,8 @@ internal object PsiPlatform {
     application.registerParserDefinition(KotlinParserDefinition())
     application.registerFileType(GroovyPsiFileType, "groovy")
     application.registerParserDefinition(GroovyPsiParserDefinition())
-    application.registerFileType(VisualXSharpFileType, "vxs")
-    application.registerParserDefinition(VisualXSharpParserDefinition())
+    application.registerFileType(TalaFileType, "tala")
+    application.registerParserDefinition(TalaParserDefinition())
     return JavaCoreProjectEnvironment(lifetime, application)
   }
 

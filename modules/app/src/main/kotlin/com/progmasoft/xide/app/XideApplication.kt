@@ -34,7 +34,9 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.progmasoft.xide.compiler.CompilerRequest
 import com.progmasoft.xide.compiler.SourceLocation
-import com.progmasoft.xide.compiler.VisualXSharpCompilerClient
+import com.progmasoft.xide.compiler.TalaCompilerClient
+import com.progmasoft.xide.psi.PsiLanguage
+import com.progmasoft.xide.psi.SourceAnalyzer
 import com.progmasoft.xide.document.TextRange
 import java.awt.FileDialog
 import java.awt.Frame
@@ -57,7 +59,7 @@ import kotlinx.coroutines.withContext
 fun XideApplication(
   owner: Frame?,
   session: WorkspaceSession = remember { WorkspaceSession() },
-  compilerClient: VisualXSharpCompilerClient = remember { VisualXSharpCompilerClient() },
+  compilerClient: TalaCompilerClient = remember { TalaCompilerClient() },
   initialProject: ProjectTree? = null,
 ) {
   var workspace by remember(session) { mutableStateOf(session.snapshot()) }
@@ -221,9 +223,9 @@ fun XideApplication(
 
   fun checkFile() {
     val selected = workspace.activeDocument ?: return
-    if (selected.language != SourceLanguage.VISUAL_XSHARP) {
-      // Opening a language and analyzing it are separate capabilities; only the Visual X# compiler is connected.
-      activity = "Check is available for Visual X# sources; ${selected.language?.displayName ?: "this file"} analysis is not connected yet"
+    if (selected.language != SourceLanguage.TALA) {
+      // Opening a language and analyzing it are separate capabilities; only the Tala compiler is connected.
+      activity = "Check is available for Tala sources; ${selected.language?.displayName ?: "this file"} analysis is not connected yet"
       return
     }
     if (selected.filePath == null) {
@@ -238,7 +240,12 @@ fun XideApplication(
           workspace = prepared
           val document = checkNotNull(prepared.activeDocument)
           val path = checkNotNull(document.filePath)
-          val result = withContext(Dispatchers.IO) { compilerClient.check(CompilerRequest(path)) }
+          val result =
+            withContext(Dispatchers.IO) {
+              val outline = SourceAnalyzer.analyze(PsiLanguage.TALA, document.snapshot.text).outline
+              val entry = entryClassOf(outline) ?: error("Check needs a class with Main() inside a namespace")
+              compilerClient.check(CompilerRequest(path, entry))
+            }
           Triple(document, result, session.publishDiagnostics(document.snapshot.uri, document.snapshot.version, result.diagnostics))
         }
         .onSuccess { (document, result, accepted) ->
@@ -290,7 +297,7 @@ fun XideApplication(
     MainToolbar(
       projectName = project?.rootName,
       canActOnDocument = activeDocument != null,
-      canCheck = activeDocument?.language == SourceLanguage.VISUAL_XSHARP,
+      canCheck = activeDocument?.language == SourceLanguage.TALA,
       busy = busy,
       onNewFile = ::newFile,
       onOpenFile = ::openFile,
@@ -413,7 +420,7 @@ private fun VerticalBorder() {
  * Native dialogs keep file ownership outside Compose state and return normalized absolute paths.
  *
  * Opening accepts any source Xide recognizes. Saving keeps a recognized extension the user typed and otherwise
- * adds `.vxs`, the extension of the scratch documents that are the only ones without a path.
+ * adds `.tala`, the extension of the scratch documents that are the only ones without a path.
  */
 private fun chooseSourceFile(owner: Frame?, mode: Int, suggestedName: String?): Path? {
   val dialog = FileDialog(owner, if (mode == FileDialog.LOAD) "Open File" else "Save File", mode)
@@ -424,7 +431,7 @@ private fun chooseSourceFile(owner: Frame?, mode: Int, suggestedName: String?): 
   val file = dialog.file ?: return null
   val selected = Path.of(directory, file)
   val resolved =
-    if (mode == FileDialog.LOAD || SourceLanguage.of(selected) != null) selected else selected.resolveSibling("$file.vxs")
+    if (mode == FileDialog.LOAD || SourceLanguage.of(selected) != null) selected else selected.resolveSibling("$file.tala")
   return resolved.toAbsolutePath().normalize()
 }
 

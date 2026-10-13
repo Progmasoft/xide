@@ -13,7 +13,7 @@ import kotlin.test.assertFailsWith
 class TextDocumentTest {
   @Test
   fun rejectsRelativeDocumentUris() {
-    val relativeUri = URI.create("workspace/Main.vxs")
+    val relativeUri = URI.create("workspace/Main.tala")
 
     assertFailsWith<IllegalArgumentException> { DocumentSnapshot(relativeUri, 0, "") }
     assertFailsWith<IllegalArgumentException> { TextDocument(relativeUri, "") }
@@ -21,7 +21,7 @@ class TextDocumentTest {
 
   @Test
   fun editsCreateNewImmutableVersions() {
-    val document = TextDocument(URI.create("file:///workspace/Main.vxs"), "class Main {}")
+    val document = TextDocument(URI.create("file:///workspace/Main.tala"), "class Main {}")
     val original = document.snapshot()
     val updated = document.apply(0, TextEdit(TextRange(6, 10), "Program"))
     assertEquals(0, original.version)
@@ -33,7 +33,7 @@ class TextDocumentTest {
 
   @Test
   fun rejectsStaleAndOutOfBoundsEdits() {
-    val document = TextDocument(URI.create("untitled:visual-xsharp"), "value")
+    val document = TextDocument(URI.create("untitled:tala"), "value")
     document.apply(0, TextEdit(TextRange(0, 5), "next"))
     assertFailsWith<StaleDocumentVersionException> {
       document.apply(0, TextEdit(TextRange(0, 0), "stale"))

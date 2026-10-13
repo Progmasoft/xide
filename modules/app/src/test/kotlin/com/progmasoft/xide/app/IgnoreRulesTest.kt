@@ -59,8 +59,8 @@ class IgnoreRulesTest {
 
   @Test
   fun wildcardsDoNotCrossASeparator() {
-    assertTrue(matches("src/*.vxs", "src/Main.vxs"))
-    assertFalse(matches("src/*.vxs", "src/nested/Main.vxs"))
+    assertTrue(matches("src/*.tala", "src/Main.tala"))
+    assertFalse(matches("src/*.tala", "src/nested/Main.tala"))
     assertTrue(matches("file?.txt", "file1.txt"))
     assertFalse(matches("file?.txt", "file/.txt"))
     assertFalse(matches("file?.txt", "file12.txt"))
@@ -92,8 +92,8 @@ class IgnoreRulesTest {
   fun regularExpressionCharactersAreLiteral() {
     assertTrue(matches("a+b(1).txt", "a+b(1).txt"))
     assertFalse(matches("a+b(1).txt", "aab1.txt"))
-    assertTrue(matches("name.vxs", "name.vxs"))
-    assertFalse(matches("name.vxs", "nameXvxs"))
+    assertTrue(matches("name.tala", "name.tala"))
+    assertFalse(matches("name.tala", "nameXtala"))
   }
 
   @Test
@@ -217,13 +217,13 @@ class IgnoreRulesTest {
     val root =
       project(
         ".gitignore" to "vendor/\n",
-        "vendor/.gitignore" to "*.vxs\n",
-        "src/Main.vxs" to "",
+        "vendor/.gitignore" to "*.tala\n",
+        "src/Main.tala" to "",
       )
     val ignore = ProjectIgnore(root, ignoreCase = false)
 
     assertTrue(ignore.isIgnored(root.resolve("vendor"), true))
-    assertFalse(ignore.isIgnored(root.resolve("src/Main.vxs"), false))
+    assertFalse(ignore.isIgnored(root.resolve("src/Main.tala"), false))
     assertFalse(Files.readString(root.resolve(ProjectIgnore.EXCLUDE_LIST)).contains("vendor/.gitignore"))
   }
 

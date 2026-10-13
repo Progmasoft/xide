@@ -148,11 +148,11 @@ class WorkspaceSession {
     return snapshot()
   }
 
-  /** Creates an unsaved Visual X# document with a process-local, stable identity. */
+  /** Creates an unsaved Tala document with a process-local, stable identity. */
   @Synchronized
   fun newScratch(): WorkspaceSnapshot {
     val number = nextScratchNumber++
-    return open(URI.create("untitled:Xide-$number.vxs"), defaultScratchText(number))
+    return open(URI.create("untitled:Xide-$number.tala"), defaultScratchText(number))
   }
 
   /** Loads a source file of a supported language without tying namespace identity to its directory layout. */
@@ -368,7 +368,7 @@ class WorkspaceSession {
 
   private fun titleFor(uri: URI): String {
     val candidate = uri.path?.substringAfterLast('/')?.takeIf(String::isNotBlank)
-    return candidate ?: uri.schemeSpecificPart.substringAfterLast('/').ifBlank { "Untitled.vxs" }
+    return candidate ?: uri.schemeSpecificPart.substringAfterLast('/').ifBlank { "Untitled.tala" }
   }
 
   private fun validateSourcePath(path: Path, mustExist: Boolean): Path {

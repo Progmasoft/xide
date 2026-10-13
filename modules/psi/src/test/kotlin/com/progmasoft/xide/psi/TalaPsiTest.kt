@@ -10,18 +10,18 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.jetbrains.kotlin.com.intellij.psi.TokenType
 
-/** Tests the Visual X# lexer and structural parser on the PSI platform. */
-class VisualXSharpPsiTest {
+/** Tests the Tala lexer and structural parser on the PSI platform. */
+class TalaPsiTest {
   private fun List<OutlineEntry>.render(depth: Int = 0): String =
     joinToString("") { "  ".repeat(depth) + it.kind + " " + it.name + "\n" + it.children.render(depth + 1) }
 
-  private fun outline(text: String): String = SourceAnalyzer.analyze(PsiLanguage.VISUAL_XSHARP, text).outline.render()
+  private fun outline(text: String): String = SourceAnalyzer.analyze(PsiLanguage.TALA, text).outline.render()
 
-  private fun tree(text: String): String = SourceAnalyzer.describeTree(PsiLanguage.VISUAL_XSHARP, text)
+  private fun tree(text: String): String = SourceAnalyzer.describeTree(PsiLanguage.TALA, text)
 
   /** The tokens of the PSI lexer as `TYPE:text`. */
   private fun lexed(text: String): List<String> {
-    val lexer = VisualXSharpLexer()
+    val lexer = TalaLexer()
     lexer.start(text)
     val result = ArrayList<String>()
     var position = 0
@@ -163,7 +163,7 @@ class VisualXSharpPsiTest {
   fun theTreeNamesEachDeclarationAndKeepsBodiesOpaque() {
     assertEquals(
       """
-      VXS_FILE
+      TALA_FILE
         NAMESPACE_DECLARATION
           NAME
         TYPE_DECLARATION
@@ -200,10 +200,10 @@ class VisualXSharpPsiTest {
   }
 
   @Test
-  fun visualXSharpReportsNoSyntaxProblems() {
+  fun talaReportsNoSyntaxProblems() {
     // Its errors come from the compiler; the structural parser accepts whatever is being typed.
     for (text in listOf("}}} class { ( [ \"unterminated", "class", "int x", "namespace", "using selected a {", "#")) {
-      assertEquals(emptyList(), SourceAnalyzer.analyze(PsiLanguage.VISUAL_XSHARP, text).problems, text)
+      assertEquals(emptyList(), SourceAnalyzer.analyze(PsiLanguage.TALA, text).problems, text)
     }
   }
 

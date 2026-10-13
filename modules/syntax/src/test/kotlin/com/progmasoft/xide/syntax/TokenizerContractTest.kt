@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 class TokenizerContractTest {
   private val tokenizers: Map<String, Tokenizer> =
     mapOf(
-      "Visual X#" to VisualXSharpTokenizer,
+      "Tala" to TalaTokenizer,
       "Python" to PythonTokenizer,
     )
 

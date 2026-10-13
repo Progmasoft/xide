@@ -6,7 +6,7 @@
 package com.progmasoft.xide.syntax
 
 /**
- * Tokenizes Visual X# source for colouring.
+ * Tokenizes Tala source for colouring.
  *
  * The lexical rules mirror the compiler's lexer where colouring depends on them:
  *
@@ -19,7 +19,7 @@ package com.progmasoft.xide.syntax
  * - `'` separates digit groups inside a number and otherwise starts a character literal;
  * - `::` is one sign, the method reference of `Type::Method`, and not two colons.
  */
-object VisualXSharpTokenizer : Tokenizer {
+object TalaTokenizer : Tokenizer {
   /** The reserved words of the language, as the compiler's lexer lists them. */
   val keywords: Set<String> =
     setOf(

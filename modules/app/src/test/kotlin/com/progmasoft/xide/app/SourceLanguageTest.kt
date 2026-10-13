@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 class SourceLanguageTest {
   @Test
   fun languagesAreRecognizedFromTheExactExtension() {
-    assertEquals(SourceLanguage.VISUAL_XSHARP, SourceLanguage.ofFileName("Main.vxs"))
+    assertEquals(SourceLanguage.TALA, SourceLanguage.ofFileName("Main.tala"))
     assertEquals(SourceLanguage.KOTLIN, SourceLanguage.ofFileName("App.kt"))
     assertEquals(SourceLanguage.KOTLIN, SourceLanguage.ofFileName("build.gradle.kts"))
     assertEquals(SourceLanguage.JAVA, SourceLanguage.ofFileName("Main.java"))
@@ -30,8 +30,8 @@ class SourceLanguageTest {
   @Test
   fun unknownAndMalformedNamesHaveNoLanguage() {
     assertNull(SourceLanguage.ofFileName("README.md"))
-    assertNull(SourceLanguage.ofFileName("Main.VXS"))
-    assertNull(SourceLanguage.ofFileName("Main.vxs.bak"))
+    assertNull(SourceLanguage.ofFileName("Main.TALA"))
+    assertNull(SourceLanguage.ofFileName("Main.tala.bak"))
     assertNull(SourceLanguage.ofFileName("Makefile"))
     assertNull(SourceLanguage.ofFileName("trailing."))
     // A leading dot names a hidden file, not an extension.
@@ -42,19 +42,19 @@ class SourceLanguageTest {
   @Test
   fun theLanguageOrderIsTheSupportPriority() {
     assertEquals(
-      listOf("Visual X#", "Kotlin", "Java", "Groovy", "Python"),
+      listOf("Tala", "Kotlin", "Java", "Groovy", "Python"),
       SourceLanguage.entries.map { it.displayName },
     )
-    assertEquals(listOf("vxs", "kt", "kts", "java", "groovy", "gradle", "py"), SourceLanguage.allExtensions)
+    assertEquals(listOf("tala", "kt", "kts", "java", "groovy", "gradle", "py"), SourceLanguage.allExtensions)
     assertEquals(SourceLanguage.allExtensions.size, SourceLanguage.allExtensions.distinct().size)
-    assertTrue(SourceLanguage.supportedDescription().startsWith("Visual X# (.vxs), Kotlin (.kt, .kts)"))
+    assertTrue(SourceLanguage.supportedDescription().startsWith("Tala (.tala), Kotlin (.kt, .kts)"))
   }
 
   @Test
   fun theSessionOpensEverySupportedLanguageAndNothingElse() {
     val directory = createTempDirectory("xide-language")
     val session = WorkspaceSession()
-    for (name in listOf("Main.vxs", "App.kt", "build.gradle.kts", "Main.java", "build.gradle", "tool.py")) {
+    for (name in listOf("Main.tala", "App.kt", "build.gradle.kts", "Main.java", "build.gradle", "tool.py")) {
       Files.writeString(directory.resolve(name), "text of $name")
       val opened = session.openFile(directory.resolve(name))
       assertEquals("text of $name", opened.activeDocument?.snapshot?.text)

@@ -17,22 +17,22 @@ import kotlin.test.assertTrue
 
 class WorkspaceSessionTest {
   @Test
-  fun createsDistinctVisualXSharpScratchDocuments() {
+  fun createsDistinctTalaScratchDocuments() {
     val session = WorkspaceSession()
 
     session.newScratch()
     val workspace = session.newScratch()
 
-    assertEquals(listOf("Xide-1.vxs", "Xide-2.vxs"), workspace.documents.map { it.title })
+    assertEquals(listOf("Xide-1.tala", "Xide-2.tala"), workspace.documents.map { it.title })
     assertEquals(1, workspace.activeIndex)
-    assertEquals("untitled:Xide-2.vxs", workspace.activeDocument?.snapshot?.uri.toString())
+    assertEquals("untitled:Xide-2.tala", workspace.activeDocument?.snapshot?.uri.toString())
     assertTrue(workspace.activeDocument?.snapshot?.text?.contains("public static void Main()") == true)
   }
 
   @Test
   fun repeatedOpenSelectsTheExistingDocumentWithoutReplacingIt() {
     val session = WorkspaceSession()
-    val uri = URI.create("file:///workspace/Main.vxs")
+    val uri = URI.create("file:///workspace/Main.tala")
 
     session.open(uri, "original")
     session.newScratch()
@@ -46,7 +46,7 @@ class WorkspaceSessionTest {
   @Test
   fun editorChangesUseTheVersionedDocumentBoundary() {
     val session = WorkspaceSession()
-    val opened = session.open(URI.create("file:///workspace/Main.vxs"), "old")
+    val opened = session.open(URI.create("file:///workspace/Main.tala"), "old")
     val version = opened.activeDocument!!.snapshot.version
 
     val updated = session.replaceActiveText(version, "new")
@@ -61,7 +61,7 @@ class WorkspaceSessionTest {
   @Test
   fun equalEditorEchoDoesNotCreateANewVersion() {
     val session = WorkspaceSession()
-    val opened = session.open(URI.create("untitled:Stable.vxs"), "same")
+    val opened = session.open(URI.create("untitled:Stable.tala"), "same")
 
     val unchanged = session.replaceActiveText(opened.activeDocument!!.snapshot.version, "same")
 
@@ -71,7 +71,7 @@ class WorkspaceSessionTest {
   @Test
   fun serializedUiChangesAlwaysAdvanceFromTheCurrentVersion() {
     val session = WorkspaceSession()
-    session.open(URI.create("untitled:Typing.vxs"), "")
+    session.open(URI.create("untitled:Typing.tala"), "")
 
     session.replaceActiveText("a")
     val updated = session.replaceActiveText("ab")
@@ -83,7 +83,7 @@ class WorkspaceSessionTest {
   @Test
   fun snapshotsRejectInvalidActiveIndexesAndDuplicateUris() {
     val session = WorkspaceSession()
-    val first = session.open(URI.create("untitled:One.vxs"), "").activeDocument!!
+    val first = session.open(URI.create("untitled:One.tala"), "").activeDocument!!
 
     assertFailsWith<IllegalArgumentException> { WorkspaceSnapshot(listOf(first), 1) }
     assertFailsWith<IllegalArgumentException> { WorkspaceSnapshot(listOf(first, first), 0) }
@@ -92,7 +92,7 @@ class WorkspaceSessionTest {
   @Test
   fun publishesDiagnosticsOnlyForTheRequestedCurrentVersion() {
     val session = WorkspaceSession()
-    val uri = URI.create("file:///workspace/Main.vxs")
+    val uri = URI.create("file:///workspace/Main.tala")
     val opened = session.open(uri, "source")
     val version = opened.activeDocument!!.snapshot.version
     val diagnostics = DiagnosticDocument(emptyList())
@@ -106,7 +106,7 @@ class WorkspaceSessionTest {
   @Test
   fun editingInvalidatesPublishedDiagnostics() {
     val session = WorkspaceSession()
-    val uri = URI.create("file:///workspace/Main.vxs")
+    val uri = URI.create("file:///workspace/Main.tala")
     val opened = session.open(uri, "source")
     val version = opened.activeDocument!!.snapshot.version
     session.publishDiagnostics(uri, version, DiagnosticDocument(emptyList()))
@@ -119,31 +119,31 @@ class WorkspaceSessionTest {
   @Test
   fun staleAndUnknownDiagnosticResultsAreDiscarded() {
     val session = WorkspaceSession()
-    val uri = URI.create("untitled:Main.vxs")
+    val uri = URI.create("untitled:Main.tala")
     session.open(uri, "source")
     session.replaceActiveText("changed")
 
     assertTrue(!session.publishDiagnostics(uri, 0, DiagnosticDocument(emptyList())))
-    assertTrue(!session.publishDiagnostics(URI.create("untitled:Missing.vxs"), 0, DiagnosticDocument(emptyList())))
+    assertTrue(!session.publishDiagnostics(URI.create("untitled:Missing.tala"), 0, DiagnosticDocument(emptyList())))
     assertEquals(null, session.snapshot().activeDocument?.diagnostics)
   }
 
   @Test
   fun clearingDiagnosticsReportsWhetherStateChanged() {
     val session = WorkspaceSession()
-    val uri = URI.create("untitled:Main.vxs")
+    val uri = URI.create("untitled:Main.tala")
     val opened = session.open(uri, "source")
     session.publishDiagnostics(uri, opened.activeDocument!!.snapshot.version, DiagnosticDocument(emptyList()))
 
     assertTrue(session.clearDiagnostics(uri))
     assertTrue(!session.clearDiagnostics(uri))
-    assertTrue(!session.clearDiagnostics(URI.create("untitled:Missing.vxs")))
+    assertTrue(!session.clearDiagnostics(URI.create("untitled:Missing.tala")))
   }
 
   @Test
   fun opensPhysicalSourceFilesAsCleanDocuments() {
     withTemporaryDirectory { directory ->
-      val source = directory.resolve("Main.vxs")
+      val source = directory.resolve("Main.tala")
       Files.writeString(source, "namespace Example;\n")
 
       val workspace = WorkspaceSession().openFile(source)
@@ -157,7 +157,7 @@ class WorkspaceSessionTest {
   @Test
   fun savesEditedFilesAndMarksThePersistedVersionClean() {
     withTemporaryDirectory { directory ->
-      val source = directory.resolve("Main.vxs")
+      val source = directory.resolve("Main.tala")
       Files.writeString(source, "old")
       val session = WorkspaceSession()
       session.openFile(source)
@@ -174,7 +174,7 @@ class WorkspaceSessionTest {
   @Test
   fun savingAScratchDocumentAssignsItsPhysicalIdentity() {
     withTemporaryDirectory { directory ->
-      val destination = directory.resolve("Program.vxs")
+      val destination = directory.resolve("Program.tala")
       val session = WorkspaceSession()
       session.newScratch()
 
@@ -182,15 +182,15 @@ class WorkspaceSessionTest {
 
       assertEquals(destination.toUri(), saved.activeDocument?.snapshot?.uri)
       assertEquals(destination.toAbsolutePath(), saved.activeDocument?.filePath)
-      assertEquals("Program.vxs", saved.activeDocument?.title)
+      assertEquals("Program.tala", saved.activeDocument?.title)
       assertTrue(Files.readString(destination).contains("public static void Main()"))
     }
   }
 
   @Test
-  fun rejectsWrongCaseAndNonVisualXSharpSourceExtensions() {
+  fun rejectsWrongCaseAndNonTalaSourceExtensions() {
     withTemporaryDirectory { directory ->
-      val uppercase = directory.resolve("Main.VXS")
+      val uppercase = directory.resolve("Main.TALA")
       val text = directory.resolve("Main.txt")
       Files.writeString(uppercase, "source")
       Files.writeString(text, "source")

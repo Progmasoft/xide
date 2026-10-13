@@ -197,7 +197,7 @@ class DiagnosticProtocolException(
 ) : IllegalArgumentException("$context at byte $offset: $message")
 
 /**
- * Decodes the private VXDG v1 compiler-to-tooling protocol.
+ * Decodes the private TADG v1 compiler-to-tooling protocol.
  *
  * Text is carried as counted Unicode scalar values, matching the compiler artifact protocols. It is deliberately not
  * decoded as UTF-8: source encoding and protocol encoding are separate concerns. Every count is checked before an
@@ -207,7 +207,7 @@ class DiagnosticProtocolException(
 object DiagnosticProtocol {
   /** The protocol version this decoder accepts. */
   const val VERSION: Int = 1
-  private val magic = byteArrayOf('V'.code.toByte(), 'X'.code.toByte(), 'D'.code.toByte(), 'G'.code.toByte())
+  private val magic = byteArrayOf('T'.code.toByte(), 'A'.code.toByte(), 'D'.code.toByte(), 'G'.code.toByte())
 
   /**
    * Decodes one complete diagnostic document.
@@ -225,7 +225,7 @@ object DiagnosticProtocol {
     val reader = Reader(bytes, limits)
     magic.forEach { expected ->
       if (reader.readByte("magic") != expected.toUByte()) {
-        reader.fail("magic", "input is not a Visual X# diagnostic document")
+        reader.fail("magic", "input is not a Tala diagnostic document")
       }
     }
     val version = reader.readU16("version")

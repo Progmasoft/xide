@@ -56,7 +56,7 @@ class StructureUiTest {
 
   @Test
   fun theStructureToolWindowListsTheDeclarationsOfTheActiveDocument() = runComposeUiTest {
-    setContent { XideApplication(owner = null, session = session("Main.vxs", source)) }
+    setContent { XideApplication(owner = null, session = session("Main.tala", source)) }
 
     // The tool window is closed until it is asked for.
     onNodeWithContentDescription("type Program").assertDoesNotExist()
@@ -74,7 +74,7 @@ class StructureUiTest {
 
   @Test
   fun clickingADeclarationMovesTheCaretToItAndMarksIt() = runComposeUiTest {
-    setContent { XideApplication(owner = null, session = session("Main.vxs", source)) }
+    setContent { XideApplication(owner = null, session = session("Main.tala", source)) }
     val editor = onNode(hasSetTextAction())
     fun selection(): TextRange? = editor.fetchSemanticsNode().config.getOrNull(SemanticsProperties.TextSelectionRange)
 
@@ -101,7 +101,7 @@ class StructureUiTest {
 
   @Test
   fun theStructureFollowsAnEdit() = runComposeUiTest {
-    setContent { XideApplication(owner = null, session = session("Main.vxs", source)) }
+    setContent { XideApplication(owner = null, session = session("Main.tala", source)) }
     onNodeWithContentDescription("Structure tool window").performClick()
     awaitDescription("function Main")
 
@@ -132,7 +132,7 @@ class StructureUiTest {
 
   @Test
   fun altSevenOpensAndClosesTheToolWindow() = runComposeUiTest {
-    setContent { XideApplication(owner = null, session = session("Main.vxs", source)) }
+    setContent { XideApplication(owner = null, session = session("Main.tala", source)) }
     // Key events are delivered to the focused node, so give the editor focus first.
     onNode(hasSetTextAction()).performClick()
     onNode(hasSetTextAction()).performKeyInput { withKeyDown(Key.AltLeft) { pressKey(Key.Seven) } }
