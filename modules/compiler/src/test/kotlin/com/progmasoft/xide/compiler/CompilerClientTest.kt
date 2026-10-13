@@ -106,6 +106,22 @@ class CompilerClientTest {
   }
 
   @Test
+  fun aSourceWithoutAnEntryIsCheckedWithoutOne() {
+    withSource { source ->
+      var command: List<String>? = null
+      val runner = CompilerProcessRunner { invocation ->
+        command = invocation.command
+        Files.write(Path.of(invocation.environment.getValue("TALA_DIAGNOSTICS_FILE")), WireWriter().header(0).toByteArray())
+        CompilerProcessResult(0, byteArrayOf(), byteArrayOf(), false)
+      }
+
+      TalaCompilerClient(runner).check(CompilerRequest(source))
+
+      assertEquals(listOf("talac", "--emit=metadata", "--", source.toString()), command)
+    }
+  }
+
+  @Test
   fun anEntryIsAClassWrittenWithItsNamespace() {
     withSource { source ->
       listOf("Program", "", "Demo.", "Demo..Program", "--emit=core", "Demo.Pro gram").forEach { entry ->

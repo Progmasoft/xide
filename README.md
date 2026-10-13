@@ -46,8 +46,8 @@ The renewed Kotlin/JVM foundation currently has five modules. `xide-document` pr
 - stale-version protection for concurrent editor consumers.
 
 `xide-compiler` consumes the bounded TADG v1 structured diagnostic protocol and starts `talac`, the compiler, as
-`talac --entry=<class> --emit=metadata -- <source>`: a check that generates no code. The entry is the first class of the
-file with a `Main` method, written with the namespace of the file.
+`talac [--entry=<class>] --emit=metadata -- <source>`: a check that generates no code. The entry is the first class of
+the file with a `Main` method, written with the namespace of the file; a file without one is checked without an entry.
 Every request uses a unique temporary side channel, drains process output concurrently, enforces a timeout, and refuses to
 reconstruct diagnostics by scraping terminal text. `xide-app` binds results to the exact document version that was checked,
 discards stale asynchronous results after edits, and renders accepted records in its problems surface.

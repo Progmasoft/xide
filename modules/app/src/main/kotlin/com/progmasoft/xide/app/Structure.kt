@@ -126,8 +126,8 @@ fun documentStructure(language: SourceLanguage?, snapshot: DocumentSnapshot): Do
 }
 
 /**
- * The class a check of this source starts from: the first class with a `Main` method, written with the namespace of
- * the file, as in `Demo.Program`. The compiler checks a source as a program and has to be told where it begins.
+ * The class a check of this source names as its entry: the first class with a `Main` method, written with the
+ * namespace of the file, as in `Demo.Program`. A source without one is still checked, without an entry.
  *
  * The outline does not say whether that `Main` is public, static and without parameters; the compiler does, and its
  * diagnostic is the better explanation when it is not. Null when the file declares no namespace or no such class.

@@ -20,8 +20,8 @@ import kotlin.concurrent.thread
  * One request to check a source file with `talac`, the compiler.
  *
  * @property source the absolute path of the file to check.
- * @property entry the class whose `Main` starts the program, written with its namespace: `Demo.Program`. The
- *   compiler checks a source as a program and needs to know where the program begins.
+ * @property entry the class whose `Main` starts the program, written with its namespace: `Demo.Program`; null for
+ *   a source that has none. A check of one source needs no entry, and naming it lets the compiler verify it.
  * @property workingDirectory the absolute directory the compiler runs in; relative locations in its diagnostics
  *   are relative to this directory. It defaults to the source's directory.
  * @property executable the driver to run; a bare name is resolved through the search path.
@@ -29,14 +29,14 @@ import kotlin.concurrent.thread
  */
 data class CompilerRequest(
   val source: Path,
-  val entry: String,
+  val entry: String? = null,
   val workingDirectory: Path = source.toAbsolutePath().normalize().parent ?: source.toAbsolutePath().normalize(),
   val executable: Path = Path.of("talac"),
   val timeout: Duration = Duration.ofSeconds(30),
 ) {
   init {
     require(source.isAbsolute) { "compiler source path must be absolute" }
-    require(ENTRY.matches(entry)) { "compiler entry must be a class written with its namespace" }
+    require(entry == null || ENTRY.matches(entry)) { "compiler entry must be a class written with its namespace" }
     require(workingDirectory.isAbsolute) { "compiler working directory must be absolute" }
     require(!timeout.isNegative && !timeout.isZero) { "compiler timeout must be positive" }
   }
@@ -102,7 +102,7 @@ data class CompilerProcessResult(
 /**
  * Invokes `talac` and consumes diagnostics from its private protocol file.
  *
- * A check is `talac --entry=<class> --emit=metadata -- <source>`: every verifier runs and no code is generated. The
+ * A check is `talac [--entry=<class>] --emit=metadata -- <source>`: every verifier runs and no code is generated. The
  * compiler leaves a small record of an accepted check, `<source name>.talameta`, beside the source. An editor has no
  * use for it, so a record this request caused is removed again; one that was already there is left alone.
  *
@@ -133,9 +133,9 @@ class TalaCompilerClient(
       val invocation =
         CompilerInvocation(
           command =
-            listOf(
+            listOfNotNull(
               request.executable.toString(),
-              "--entry=${request.entry}",
+              request.entry?.let { "--entry=$it" },
               "--emit=metadata",
               // A source may be named like an option; after "--" the compiler reads only inputs.
               "--",

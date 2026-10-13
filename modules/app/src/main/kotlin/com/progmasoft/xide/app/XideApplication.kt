@@ -243,8 +243,7 @@ fun XideApplication(
           val result =
             withContext(Dispatchers.IO) {
               val outline = SourceAnalyzer.analyze(PsiLanguage.TALA, document.snapshot.text).outline
-              val entry = entryClassOf(outline) ?: error("Check needs a class with Main() inside a namespace")
-              compilerClient.check(CompilerRequest(path, entry))
+              compilerClient.check(CompilerRequest(path, entryClassOf(outline)))
             }
           Triple(document, result, session.publishDiagnostics(document.snapshot.uri, document.snapshot.version, result.diagnostics))
         }
