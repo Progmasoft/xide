@@ -17,9 +17,11 @@ import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 /**
- * One request to check a source file with the `vxs` driver.
+ * One request to check a source file with `talac`, the compiler.
  *
  * @property source the absolute path of the file to check.
+ * @property entry the class whose `Main` starts the program, written with its namespace: `Demo.Program`; null for
+ *   a source that has none. A check of one source needs no entry, and naming it lets the compiler verify it.
  * @property workingDirectory the absolute directory the compiler runs in; relative locations in its diagnostics
  *   are relative to this directory. It defaults to the source's directory.
  * @property executable the driver to run; a bare name is resolved through the search path.
@@ -27,12 +29,14 @@ import kotlin.concurrent.thread
  */
 data class CompilerRequest(
   val source: Path,
+  val entry: String? = null,
   val workingDirectory: Path = source.toAbsolutePath().normalize().parent ?: source.toAbsolutePath().normalize(),
-  val executable: Path = Path.of("vxs"),
+  val executable: Path = Path.of("talac"),
   val timeout: Duration = Duration.ofSeconds(30),
 ) {
   init {
     require(source.isAbsolute) { "compiler source path must be absolute" }
+    require(entry == null || ENTRY.matches(entry)) { "compiler entry must be a class written with its namespace" }
     require(workingDirectory.isAbsolute) { "compiler working directory must be absolute" }
     require(!timeout.isNegative && !timeout.isZero) { "compiler timeout must be positive" }
   }
@@ -96,14 +100,18 @@ data class CompilerProcessResult(
 )
 
 /**
- * Invokes the single public `vxs` driver and consumes diagnostics from its private protocol file.
+ * Invokes `talac` and consumes diagnostics from its private protocol file.
+ *
+ * A check is `talac [--entry=<class>] --emit=metadata -- <source>`: every verifier runs and no code is generated. The
+ * compiler leaves a small record of an accepted check, `<source name>.talameta`, beside the source. An editor has no
+ * use for it, so a record this request caused is removed again; one that was already there is left alone.
  *
  * The client never parses terminal text. It reserves a unique side-channel file for each request and keeps that file
  * in place while the compiler writes it, avoiding a name-reuse window between temporary-file creation and process
  * launch. The protocol file is deleted in a `finally` block, so a crashed compiler cannot make Xide consume a previous
  * request's diagnostics.
  */
-class VisualXSharpCompilerClient(
+class TalaCompilerClient(
   private val runner: CompilerProcessRunner = SystemCompilerProcessRunner(),
   private val limits: DiagnosticProtocolLimits = DiagnosticProtocolLimits(),
 ) {
@@ -118,11 +126,21 @@ class VisualXSharpCompilerClient(
     require(Files.isRegularFile(request.source)) { "compiler source must identify a regular file" }
     require(Files.isDirectory(request.workingDirectory)) { "compiler working directory must exist" }
 
-    val diagnosticsPath = Files.createTempFile("xide-diagnostics-", ".vxdg")
+    val diagnosticsPath = Files.createTempFile("xide-diagnostics-", ".tadg")
+    val record = checkRecordOf(request.source)
+    val recordExisted = Files.exists(record)
     try {
       val invocation =
         CompilerInvocation(
-          command = listOf(request.executable.toString(), "check", "-File", request.source.toString()),
+          command =
+            listOfNotNull(
+              request.executable.toString(),
+              request.entry?.let { "--entry=$it" },
+              "--emit=metadata",
+              // A source may be named like an option; after "--" the compiler reads only inputs.
+              "--",
+              request.source.toString(),
+            ),
           workingDirectory = request.workingDirectory,
           environment = mapOf(DIAGNOSTICS_ENVIRONMENT to diagnosticsPath.toString()),
           timeout = request.timeout,
@@ -138,7 +156,14 @@ class VisualXSharpCompilerClient(
       )
     } finally {
       Files.deleteIfExists(diagnosticsPath)
+      if (!recordExisted) Files.deleteIfExists(record)
     }
+  }
+
+  /** Where the compiler writes the record of an accepted check: beside the source, under the source's name. */
+  private fun checkRecordOf(source: Path): Path {
+    val name = source.fileName.toString()
+    return source.resolveSibling(name.removeSuffix(".tala") + ".talameta")
   }
 
   private fun readDocument(path: Path, process: CompilerProcessResult): DiagnosticDocument {
@@ -166,10 +191,12 @@ class VisualXSharpCompilerClient(
   }
 
   private companion object {
-    const val DIAGNOSTICS_ENVIRONMENT = "VXS_DIAGNOSTICS_FILE"
+    const val DIAGNOSTICS_ENVIRONMENT = "TALA_DIAGNOSTICS_FILE"
     const val MAXIMUM_TERMINAL_BYTES = 4 * 1024 * 1024
   }
 }
+
+private val ENTRY = Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+")
 
 /** The compiler ran but its structured result could not be used. */
 class CompilerClientException(message: String, cause: Throwable? = null) : IllegalStateException(message, cause)
@@ -199,8 +226,8 @@ class SystemCompilerProcessRunner(
 
     val standardOutput = StreamCapture(process.inputStream, maximumStreamBytes, "standard output")
     val standardError = StreamCapture(process.errorStream, maximumStreamBytes, "standard error")
-    val outputThread = thread(name = "xide-vxs-stdout", isDaemon = true) { standardOutput.read() }
-    val errorThread = thread(name = "xide-vxs-stderr", isDaemon = true) { standardError.read() }
+    val outputThread = thread(name = "xide-talac-stdout", isDaemon = true) { standardOutput.read() }
+    val errorThread = thread(name = "xide-talac-stderr", isDaemon = true) { standardError.read() }
 
     val completed = process.waitFor(invocation.timeout.toMillis(), TimeUnit.MILLISECONDS)
     if (!completed) {
@@ -232,7 +259,7 @@ class SystemCompilerProcessRunner(
 
   /**
    * Resolves bare tool names before setting the child working directory. In particular, Windows process creation can
-   * search the current directory for a bare executable name; a project containing `vxs.exe` must not shadow the
+   * search the current directory for a bare executable name; a project containing `talac.exe` must not shadow the
    * compiler selected from the user's absolute PATH entries.
    */
   internal fun resolveCompilerExecutable(

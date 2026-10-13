@@ -14,7 +14,7 @@ body:
       options:
         - Editor or Compose UI
         - Project loading or build
-        - Visual X# language integration
+        - Tala language integration
         - Settings or persistence
         - Plugin or IDE integration
         - Other

@@ -25,13 +25,13 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ShellModelTest {
-  private fun snapshot(text: String) = DocumentSnapshot(URI.create("untitled:Test.vxs"), 0, text)
+  private fun snapshot(text: String) = DocumentSnapshot(URI.create("untitled:Test.tala"), 0, text)
 
   private fun diagnostic(severity: DiagnosticSeverity, source: String?, line: UInt = 0u) =
     CompilerDiagnostic(
       stage = DiagnosticStage.TYPE_CHECKER,
       severity = severity,
-      code = "VXS-TEST",
+      code = "TALA-TEST",
       message = "problem",
       arguments = emptyList(),
       primaryLocation =
@@ -122,7 +122,7 @@ class ShellModelTest {
     assertEquals(ProblemCounts.NONE, ProblemCounts.of(null))
     val document =
       OpenDocument(
-        "Main.vxs",
+        "Main.tala",
         snapshot("x"),
         VersionedDiagnostics(
           0,
@@ -158,20 +158,20 @@ class ShellModelTest {
 
   @Test
   fun closingAnUnmodifiedTabKeepsTheOthersInOrder() {
-    val (session, _) = sessionWith("A.vxs" to "a", "B.vxs" to "b", "C.vxs" to "c")
+    val (session, _) = sessionWith("A.tala" to "a", "B.tala" to "b", "C.tala" to "c")
     session.select(1)
 
     val closed = checkNotNull(session.close(1))
-    assertEquals(listOf("A.vxs", "C.vxs"), closed.documents.map { it.title })
+    assertEquals(listOf("A.tala", "C.tala"), closed.documents.map { it.title })
     // The tab that took the closed tab's place becomes active.
-    assertEquals("C.vxs", closed.activeDocument?.title)
+    assertEquals("C.tala", closed.activeDocument?.title)
   }
 
   @Test
   fun closingTheLastTabSelectsTheNewLastTab() {
-    val (session, _) = sessionWith("A.vxs" to "a", "B.vxs" to "b")
+    val (session, _) = sessionWith("A.tala" to "a", "B.tala" to "b")
     val closed = checkNotNull(session.close(1))
-    assertEquals("A.vxs", closed.activeDocument?.title)
+    assertEquals("A.tala", closed.activeDocument?.title)
 
     val empty = checkNotNull(session.close(0))
     assertTrue(empty.documents.isEmpty())
@@ -180,16 +180,16 @@ class ShellModelTest {
 
   @Test
   fun closingAnInactiveTabKeepsTheActiveDocument() {
-    val (session, _) = sessionWith("A.vxs" to "a", "B.vxs" to "b", "C.vxs" to "c")
+    val (session, _) = sessionWith("A.tala" to "a", "B.tala" to "b", "C.tala" to "c")
     // C is active after the last open.
-    assertEquals("C.vxs", checkNotNull(session.close(0)).activeDocument?.title)
+    assertEquals("C.tala", checkNotNull(session.close(0)).activeDocument?.title)
     session.select(0)
-    assertEquals("B.vxs", checkNotNull(session.close(1)).activeDocument?.title)
+    assertEquals("B.tala", checkNotNull(session.close(1)).activeDocument?.title)
   }
 
   @Test
   fun aModifiedTabIsNotClosedWithoutADecision() {
-    val (session, _) = sessionWith("A.vxs" to "a")
+    val (session, _) = sessionWith("A.tala" to "a")
     session.replaceActiveText("changed")
 
     assertNull(session.close(0))
@@ -209,8 +209,8 @@ class ShellModelTest {
 
   @Test
   fun lineMarkersKeepTheMostSevereProblemOfEachLine() {
-    val (session, directory) = sessionWith("Main.vxs" to "one\ntwo\nthree\n")
-    val file = directory.resolve("Main.vxs").toString()
+    val (session, directory) = sessionWith("Main.tala" to "one\ntwo\nthree\n")
+    val file = directory.resolve("Main.tala").toString()
     val opened = session.snapshot().activeDocument!!
     session.publishDiagnostics(
       opened.snapshot.uri,
@@ -220,9 +220,9 @@ class ShellModelTest {
           diagnostic(DiagnosticSeverity.WARNING, file, 1u),
           diagnostic(DiagnosticSeverity.ERROR, file, 1u),
           diagnostic(DiagnosticSeverity.HINT, file, 1u),
-          diagnostic(DiagnosticSeverity.INFORMATION, "Main.vxs", 2u),
+          diagnostic(DiagnosticSeverity.INFORMATION, "Main.tala", 2u),
           // Not this file, no location, and a line outside the document: none of these mark a line.
-          diagnostic(DiagnosticSeverity.ERROR, directory.resolve("Other.vxs").toString(), 0u),
+          diagnostic(DiagnosticSeverity.ERROR, directory.resolve("Other.tala").toString(), 0u),
           diagnostic(DiagnosticSeverity.ERROR, null),
           diagnostic(DiagnosticSeverity.ERROR, file, 40u),
         )
@@ -234,12 +234,12 @@ class ShellModelTest {
 
   @Test
   fun lineMarkersDisappearWhenTheTextNoLongerMatchesTheCheck() {
-    val (session, directory) = sessionWith("Main.vxs" to "one\n")
+    val (session, directory) = sessionWith("Main.tala" to "one\n")
     val opened = session.snapshot().activeDocument!!
     session.publishDiagnostics(
       opened.snapshot.uri,
       opened.snapshot.version,
-      DiagnosticDocument(listOf(diagnostic(DiagnosticSeverity.ERROR, directory.resolve("Main.vxs").toString()))),
+      DiagnosticDocument(listOf(diagnostic(DiagnosticSeverity.ERROR, directory.resolve("Main.tala").toString()))),
     )
     assertEquals(1, session.lineMarkers(0).size)
 

@@ -48,7 +48,7 @@ internal const val MAXIMUM_STRUCTURED_LENGTH: Int = MAXIMUM_HIGHLIGHTED_LENGTH
 internal val SourceLanguage.psiLanguage: PsiLanguage?
   get() =
     when (this) {
-      SourceLanguage.VISUAL_XSHARP -> PsiLanguage.VISUAL_XSHARP
+      SourceLanguage.TALA -> PsiLanguage.TALA
       SourceLanguage.KOTLIN -> PsiLanguage.KOTLIN
       SourceLanguage.JAVA -> PsiLanguage.JAVA
       SourceLanguage.GROOVY -> PsiLanguage.GROOVY
@@ -123,6 +123,22 @@ fun documentStructure(language: SourceLanguage?, snapshot: DocumentSnapshot): Do
   if (snapshot.text.length > MAXIMUM_STRUCTURED_LENGTH) return null
   val analysis = SourceAnalyzer.analyze(psiLanguage, snapshot.text)
   return DocumentStructure(snapshot.uri, snapshot.version, structureRows(analysis.outline))
+}
+
+/**
+ * The class a check of this source names as its entry: the first class with a `Main` method, written with the
+ * namespace of the file, as in `Demo.Program`. A source without one is still checked, without an entry.
+ *
+ * The outline does not say whether that `Main` is public, static and without parameters; the compiler does, and its
+ * diagnostic is the better explanation when it is not. Null when the file declares no namespace or no such class.
+ */
+fun entryClassOf(outline: List<OutlineEntry>): String? {
+  val namespace = outline.firstOrNull { it.kind == OutlineKind.NAMESPACE }?.name ?: return null
+  val type =
+    outline.firstOrNull { entry ->
+      entry.kind == OutlineKind.TYPE && entry.children.any { it.kind == OutlineKind.CALLABLE && it.name == "Main" }
+    } ?: return null
+  return "$namespace.${type.name}"
 }
 
 /** The word that names a kind of declaration to a screen reader and in tests. */

@@ -11,23 +11,23 @@ import org.jetbrains.kotlin.com.intellij.lang.PsiParser
 import org.jetbrains.kotlin.com.intellij.psi.tree.IElementType
 
 /**
- * The structural parser of Visual X#.
+ * The structural parser of Tala.
  *
  * It recognizes the declarations of a file and of a type body and gives each one a node with its name:
  * namespace and using declarations, type declarations with their members, callables, properties, fields and
  * static initializers. That is the structure an editor shows and navigates by.
  *
  * It does not parse statements or expressions, and it reports no errors. A body in braces is one opaque block,
- * and an initializer is skipped up to its terminator. Whether a Visual X# program is correct is decided by the
+ * and an initializer is skipped up to its terminator. Whether a Tala program is correct is decided by the
  * compiler, whose diagnostics the editor shows; a second, partial judgement here could only disagree with it.
  * For the same reason the parser accepts any text: it never stops early and never loses a token, so the tree
  * always spells out the whole file.
  *
- * The shape of a declaration follows `Grammar/visual-xsharp.ebnf` of the language repository: attributes, an
+ * The shape of a declaration follows `Grammar/visual-tala.ebnf` of the language repository: attributes, an
  * optional template clause and modifiers, then either a keyword that names the kind of type, or a type followed
  * by the declared name.
  */
-internal class VisualXSharpParser : PsiParser {
+internal class TalaParser : PsiParser {
   override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
     val file = builder.mark()
     while (!builder.eof()) {
@@ -44,14 +44,14 @@ internal class VisualXSharpParser : PsiParser {
   }
 
   private fun parseItem(builder: PsiBuilder) {
-    if (builder.tokenType == VisualXSharpTypes.DIRECTIVE) {
+    if (builder.tokenType == TalaTypes.DIRECTIVE) {
       builder.advanceLexer()
       return
     }
     // A namespace declaration may carry attributes, which come before its keyword.
     when (keywordAfterAttributes(builder)) {
-      "namespace" -> parseSimple(builder, VisualXSharpTypes.NAMESPACE_DECLARATION, "namespace", named = true)
-      "using" -> parseSimple(builder, VisualXSharpTypes.USING_DECLARATION, "using", named = false)
+      "namespace" -> parseSimple(builder, TalaTypes.NAMESPACE_DECLARATION, "namespace", named = true)
+      "using" -> parseSimple(builder, TalaTypes.USING_DECLARATION, "using", named = false)
       else -> parseDeclaration(builder)
     }
   }
@@ -91,10 +91,10 @@ internal class VisualXSharpParser : PsiParser {
     val declaration = builder.mark()
     while (!builder.eof() && builder.tokenText != keyword) builder.advanceLexer()
     builder.advanceLexer()
-    if (named && builder.tokenType == VisualXSharpTypes.IDENTIFIER) {
+    if (named && builder.tokenType == TalaTypes.IDENTIFIER) {
       val name = builder.mark()
-      while (builder.tokenType == VisualXSharpTypes.IDENTIFIER || builder.tokenText == ".") builder.advanceLexer()
-      name.done(VisualXSharpTypes.NAME)
+      while (builder.tokenType == TalaTypes.IDENTIFIER || builder.tokenText == ".") builder.advanceLexer()
+      name.done(TalaTypes.NAME)
     }
     while (!builder.eof()) {
       val text = builder.tokenText
@@ -127,7 +127,7 @@ internal class VisualXSharpParser : PsiParser {
       if (index == head.nameIndex) {
         val name = builder.mark()
         repeat(head.nameLength) { builder.advanceLexer() }
-        name.done(VisualXSharpTypes.NAME)
+        name.done(TalaTypes.NAME)
         index += head.nameLength
         continue
       }
@@ -139,7 +139,7 @@ internal class VisualXSharpParser : PsiParser {
         if (text == "}") break
         if (text == "{") {
           if (initializer || body) {
-            index += skipBalanced(builder, VisualXSharpTypes.BLOCK)
+            index += skipBalanced(builder, TalaTypes.BLOCK)
           } else {
             body = true
             parseBraces(builder, head.membersInBody)
@@ -157,7 +157,7 @@ internal class VisualXSharpParser : PsiParser {
         ")", "]" -> if (depth > 0) depth--
         "{" -> {
           // Braces inside parentheses belong to an expression, such as a default argument.
-          index += skipBalanced(builder, VisualXSharpTypes.BLOCK)
+          index += skipBalanced(builder, TalaTypes.BLOCK)
           continue
         }
         "}" -> if (depth > 0) depth = 0
@@ -172,14 +172,14 @@ internal class VisualXSharpParser : PsiParser {
   /** Parses `{ ... }` either as a type body with member declarations or as an opaque block. */
   private fun parseBraces(builder: PsiBuilder, members: Boolean) {
     if (!members) {
-      skipBalanced(builder, VisualXSharpTypes.BLOCK)
+      skipBalanced(builder, TalaTypes.BLOCK)
       return
     }
     val body = builder.mark()
     builder.advanceLexer()
     parseBody(builder)
     if (builder.tokenText == "}") builder.advanceLexer()
-    body.done(VisualXSharpTypes.TYPE_BODY)
+    body.done(TalaTypes.TYPE_BODY)
   }
 
   /**
@@ -253,7 +253,7 @@ internal class VisualXSharpParser : PsiParser {
         text in MODIFIERS -> {
           // `static { ... }` is a static initializer, not a modifier of something that follows.
           if (text == "static" && lookAheadText(builder) == "{") {
-            return Head(VisualXSharpTypes.INITIALIZER, NO_NAME, 0, membersInBody = false)
+            return Head(TalaTypes.INITIALIZER, NO_NAME, 0, membersInBody = false)
           }
           advance()
         }
@@ -269,11 +269,11 @@ internal class VisualXSharpParser : PsiParser {
       // `data class` and `enum class` are two-word kinds.
       val classForm = builder.tokenText == "class" && (keyword == "data" || keyword == "enum")
       if (classForm) advance()
-      if (builder.tokenType == VisualXSharpTypes.IDENTIFIER) {
+      if (builder.tokenType == TalaTypes.IDENTIFIER) {
         // The cases of an enumeration are not member declarations, so its body stays opaque.
         val members = keyword != "enum" && keyword !in BODILESS_TYPE_KEYWORDS
         beforeKeyword.drop()
-        return Head(VisualXSharpTypes.TYPE_DECLARATION, index, 1, members)
+        return Head(TalaTypes.TYPE_DECLARATION, index, 1, members)
       }
       // The word was a name after all, as in a field whose type is called `data`: scan it as a member.
       beforeKeyword.rollbackTo()
@@ -288,13 +288,13 @@ internal class VisualXSharpParser : PsiParser {
       val text = builder.tokenText ?: ""
       if (depth == 0) {
         when (text) {
-          "(" -> return Head(VisualXSharpTypes.CALLABLE_DECLARATION, nameIndex, nameLength, membersInBody = false)
+          "(" -> return Head(TalaTypes.CALLABLE_DECLARATION, nameIndex, nameLength, membersInBody = false)
           "{" ->
             return Head(
-              if (first) VisualXSharpTypes.INITIALIZER else VisualXSharpTypes.PROPERTY_DECLARATION,
+              if (first) TalaTypes.INITIALIZER else TalaTypes.PROPERTY_DECLARATION,
               nameIndex, nameLength, membersInBody = false,
             )
-          "=", ";", "}" -> return Head(VisualXSharpTypes.FIELD_DECLARATION, nameIndex, nameLength, membersInBody = false)
+          "=", ";", "}" -> return Head(TalaTypes.FIELD_DECLARATION, nameIndex, nameLength, membersInBody = false)
         }
       }
       first = false
@@ -302,7 +302,7 @@ internal class VisualXSharpParser : PsiParser {
         "[" -> depth++
         "]" -> if (depth > 0) depth--
       }
-      if (depth == 0 && (builder.tokenType == VisualXSharpTypes.IDENTIFIER || text == "self")) {
+      if (depth == 0 && (builder.tokenType == TalaTypes.IDENTIFIER || text == "self")) {
         nameIndex = index
         nameLength = 1
         if (text == "Operator" && lookAheadText(builder) == "<") {
@@ -317,13 +317,13 @@ internal class VisualXSharpParser : PsiParser {
         // A destructor is named by the tilde and the type name after it.
         nameIndex = index
         advance()
-        nameLength = if (builder.tokenType == VisualXSharpTypes.IDENTIFIER) 2 else 1
+        nameLength = if (builder.tokenType == TalaTypes.IDENTIFIER) 2 else 1
         if (nameLength == 2) advance()
         continue
       }
       advance()
     }
-    return Head(VisualXSharpTypes.FIELD_DECLARATION, nameIndex, nameLength, membersInBody = false)
+    return Head(TalaTypes.FIELD_DECLARATION, nameIndex, nameLength, membersInBody = false)
   }
 
   /** The text of the token after the current one, or null at the end. */

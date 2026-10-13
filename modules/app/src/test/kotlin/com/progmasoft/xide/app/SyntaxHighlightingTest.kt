@@ -33,7 +33,7 @@ class SyntaxHighlightingTest {
   @Test
   fun eachLanguageIsColouredByItsOwnRules() {
     // The same text is a comment in one language and code in another.
-    assertEquals(SyntaxColors.comment, colourOf(SourceLanguage.VISUAL_XSHARP, "-- note", "-- note"))
+    assertEquals(SyntaxColors.comment, colourOf(SourceLanguage.TALA, "-- note", "-- note"))
     assertNull(colourOf(SourceLanguage.KOTLIN, "-- note", "-- note"))
     assertEquals(SyntaxColors.comment, colourOf(SourceLanguage.PYTHON, "# note", "# note"))
     assertEquals(SyntaxColors.comment, colourOf(SourceLanguage.JAVA, "// note", "// note"))
@@ -44,13 +44,13 @@ class SyntaxHighlightingTest {
     assertEquals(SyntaxColors.annotation, colourOf(SourceLanguage.JAVA, "@Override void f() {}", "@Override"))
     assertEquals(SyntaxColors.documentation, colourOf(SourceLanguage.KOTLIN, "/** d */ val x = 1", "/** d */"))
     assertEquals(SyntaxColors.escape, colourOf(SourceLanguage.KOTLIN, "\"a\\n\"", "\\n"))
-    assertEquals(XideColors.error, colourOf(SourceLanguage.VISUAL_XSHARP, "a # b", "#"))
+    assertEquals(XideColors.error, colourOf(SourceLanguage.TALA, "a # b", "#"))
   }
 
   @Test
   fun namesOperatorsAndPunctuationKeepTheEditorColour() {
     val text = "total = count + offset;"
-    assertEquals(emptyList(), syntaxSpans(SourceLanguage.VISUAL_XSHARP, text))
+    assertEquals(emptyList(), syntaxSpans(SourceLanguage.TALA, text))
     for (kind in listOf(TokenKind.IDENTIFIER, TokenKind.OPERATOR, TokenKind.PUNCTUATION)) {
       assertNull(SyntaxColors.style(kind), kind.name)
     }

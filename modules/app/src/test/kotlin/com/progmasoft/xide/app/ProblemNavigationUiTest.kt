@@ -38,7 +38,7 @@ class ProblemNavigationUiTest {
     CompilerDiagnostic(
       stage = DiagnosticStage.TYPE_CHECKER,
       severity = DiagnosticSeverity.ERROR,
-      code = "VXS-TEST",
+      code = "TALA-TEST",
       message = message,
       arguments = emptyList(),
       primaryLocation = location,
@@ -51,7 +51,7 @@ class ProblemNavigationUiTest {
 
   @Test
   fun clickingAProblemSelectsItsRangeInTheEditor() = runComposeUiTest {
-    val file = createTempDirectory("xide-ui").resolve("Main.vxs")
+    val file = createTempDirectory("xide-ui").resolve("Main.tala")
     // `value` starts at scalar column 5 but UTF-16 column 6 because of the emoji before it.
     Files.writeString(file, "line one\n-- 😀 value here\n")
     val session = WorkspaceSession()
@@ -78,7 +78,7 @@ class ProblemNavigationUiTest {
 
     onNodeWithText("first problem", substring = true).performClick()
     waitForIdle()
-    onNodeWithText("Showing Main.vxs").assertExists()
+    onNodeWithText("Showing Main.tala").assertExists()
     assertEquals(TextRange(15, 20), selection())
 
     onNodeWithText("second problem", substring = true).performClick()
@@ -109,7 +109,7 @@ class ProblemNavigationUiTest {
 
   @Test
   fun editingTheDocumentRemovesItsProblems() = runComposeUiTest {
-    val file = createTempDirectory("xide-ui").resolve("Main.vxs")
+    val file = createTempDirectory("xide-ui").resolve("Main.tala")
     Files.writeString(file, "abc\n")
     val session = WorkspaceSession()
     val opened = session.openFile(file).activeDocument!!

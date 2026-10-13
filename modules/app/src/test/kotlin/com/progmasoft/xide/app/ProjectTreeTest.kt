@@ -33,23 +33,23 @@ class ProjectTreeTest {
 
   @Test
   fun directoriesComeBeforeFilesAndNamesIgnoreCase() {
-    val root = project("zeta.vxs", "Alpha.vxs", "beta.vxs", "src/", "Docs/", "assets/")
+    val root = project("zeta.tala", "Alpha.tala", "beta.tala", "src/", "Docs/", "assets/")
     val tree = ProjectTree(root)
 
-    assertEquals(listOf("assets", "Docs", "src", "Alpha.vxs", "beta.vxs", "zeta.vxs"), names(tree))
+    assertEquals(listOf("assets", "Docs", "src", "Alpha.tala", "beta.tala", "zeta.tala"), names(tree))
   }
 
   @Test
   fun nothingIsHiddenWithoutARule() {
-    val root = project("build/out.txt", ".git/config", "node_modules/a.js", ".idea/x.xml", "Main.vxs")
+    val root = project("build/out.txt", ".git/config", "node_modules/a.js", ".idea/x.xml", "Main.tala")
     val tree = ProjectTree(root)
 
-    assertEquals(listOf(".git", ".idea", "build", "node_modules", "Main.vxs"), names(tree))
+    assertEquals(listOf(".git", ".idea", "build", "node_modules", "Main.tala"), names(tree))
   }
 
   @Test
   fun entriesExcludedByTheListAreNotListed() {
-    val root = project("build/out.txt", "src/Main.vxs", "notes.log", "keep.log")
+    val root = project("build/out.txt", "src/Main.tala", "notes.log", "keep.log")
     Files.writeString(root.resolve(".gitignore"), "build/\n*.log\n!keep.log\n")
     val tree = ProjectTree(root)
 
@@ -59,7 +59,7 @@ class ProjectTreeTest {
 
   @Test
   fun aDirectoryIsReadOnlyWhenItIsExpanded() {
-    val root = project("src/app/Main.vxs", "src/Lib.vxs", "README.md")
+    val root = project("src/app/Main.tala", "src/Lib.tala", "README.md")
     val listed = ArrayList<Path>()
     val real = FileSystemDirectoryReader(ProjectIgnore(root))
     val tree = ProjectTree(root) { directory -> listed.add(directory); real.list(directory) }
@@ -68,7 +68,7 @@ class ProjectTreeTest {
     assertEquals(listOf(tree.root), listed)
 
     tree.toggle(root.resolve("src"))
-    assertEquals(listOf("src", "  app", "  Lib.vxs", "README.md"), names(tree))
+    assertEquals(listOf("src", "  app", "  Lib.tala", "README.md"), names(tree))
     assertTrue(tree.rows().first().expanded)
     assertEquals(listOf(tree.root, root.resolve("src")), listed)
 
@@ -79,30 +79,30 @@ class ProjectTreeTest {
 
   @Test
   fun collapsingKeepsTheNestedExpansionState() {
-    val root = project("src/app/Main.vxs")
+    val root = project("src/app/Main.tala")
     val tree = ProjectTree(root)
     tree.toggle(root.resolve("src"))
     tree.toggle(root.resolve("src/app"))
-    assertEquals(listOf("src", "  app", "    Main.vxs"), names(tree))
+    assertEquals(listOf("src", "  app", "    Main.tala"), names(tree))
 
     tree.toggle(root.resolve("src"))
     assertEquals(listOf("src"), names(tree))
     assertFalse(tree.rows().single().expanded)
 
     tree.toggle(root.resolve("src"))
-    assertEquals(listOf("src", "  app", "    Main.vxs"), names(tree))
+    assertEquals(listOf("src", "  app", "    Main.tala"), names(tree))
   }
 
   @Test
   fun refreshShowsEntriesCreatedAfterTheFirstRead() {
-    val root = project("a.vxs")
+    val root = project("a.tala")
     val tree = ProjectTree(root)
-    assertEquals(listOf("a.vxs"), names(tree))
+    assertEquals(listOf("a.tala"), names(tree))
 
-    Files.writeString(root.resolve("b.vxs"), "")
-    assertEquals(listOf("a.vxs"), names(tree))
+    Files.writeString(root.resolve("b.tala"), "")
+    assertEquals(listOf("a.tala"), names(tree))
     tree.refresh()
-    assertEquals(listOf("a.vxs", "b.vxs"), names(tree))
+    assertEquals(listOf("a.tala", "b.tala"), names(tree))
   }
 
   @Test
@@ -119,7 +119,7 @@ class ProjectTreeTest {
 
   @Test
   fun aTruncatedListingSaysSo() {
-    val root = project("a.vxs", "b.vxs", "c.vxs")
+    val root = project("a.tala", "b.tala", "c.tala")
     val tree = ProjectTree(root, FileSystemDirectoryReader(ProjectIgnore(root), maximumEntries = 2))
     val rows = tree.rows()
 
@@ -158,7 +158,7 @@ class ProjectTreeTest {
 
   @Test
   fun aDirectoryLinkIsListedAsAFileAndNotFollowed() {
-    val root = project("real/inner.vxs")
+    val root = project("real/inner.tala")
     val link = root.resolve("link")
     try {
       Files.createSymbolicLink(link, root.resolve("real"))
@@ -174,7 +174,7 @@ class ProjectTreeTest {
 
   @Test
   fun theRootNameIsTheFolderName() {
-    val root = project("a.vxs")
+    val root = project("a.tala")
     assertEquals(root.fileName.toString(), ProjectTree(root).rootName)
     assertTrue(ProjectTree(root).isExpanded(root.toAbsolutePath().normalize()))
   }

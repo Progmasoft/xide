@@ -7,7 +7,7 @@ package com.progmasoft.xide.psi
 
 import com.progmasoft.xide.syntax.Token
 import com.progmasoft.xide.syntax.TokenKind
-import com.progmasoft.xide.syntax.VisualXSharpTokenizer
+import com.progmasoft.xide.syntax.TalaTokenizer
 import javax.swing.Icon
 import org.jetbrains.kotlin.com.intellij.extapi.psi.ASTWrapperPsiElement
 import org.jetbrains.kotlin.com.intellij.extapi.psi.PsiFileBase
@@ -28,34 +28,34 @@ import org.jetbrains.kotlin.com.intellij.psi.tree.IElementType
 import org.jetbrains.kotlin.com.intellij.psi.tree.IFileElementType
 import org.jetbrains.kotlin.com.intellij.psi.tree.TokenSet
 
-/** The Visual X# language, as the PSI platform identifies it. */
-internal object VisualXSharpLanguage : Language("VisualXSharp")
+/** The Tala language, as the PSI platform identifies it. */
+internal object TalaLanguage : Language("Tala")
 
-/** The file type that ties `.vxs` text to [VisualXSharpLanguage]. */
-internal object VisualXSharpFileType : LanguageFileType(VisualXSharpLanguage) {
-  override fun getName(): String = "Visual X#"
+/** The file type that ties `.tala` text to [TalaLanguage]. */
+internal object TalaFileType : LanguageFileType(TalaLanguage) {
+  override fun getName(): String = "Tala"
 
-  override fun getDescription(): String = "Visual X#"
+  override fun getDescription(): String = "Tala"
 
-  override fun getDefaultExtension(): String = "vxs"
+  override fun getDefaultExtension(): String = "tala"
 
   override fun getIcon(): Icon? = null
 }
 
-/** A parsed Visual X# file. */
-internal class VisualXSharpFile(provider: FileViewProvider) : PsiFileBase(provider, VisualXSharpLanguage) {
-  override fun getFileType(): FileType = VisualXSharpFileType
+/** A parsed Tala file. */
+internal class TalaFile(provider: FileViewProvider) : PsiFileBase(provider, TalaLanguage) {
+  override fun getFileType(): FileType = TalaFileType
 }
 
 /**
- * The element types of the Visual X# tree.
+ * The element types of the Tala tree.
  *
  * The token types follow the lexical kinds of the colouring tokenizer, because that tokenizer is the one place
  * where the lexical rules of the language are written down in Xide. The composite types are the declarations
- * the structural parser recognizes; see [VisualXSharpParser].
+ * the structural parser recognizes; see [TalaParser].
  */
-internal object VisualXSharpTypes {
-  val FILE = IFileElementType("VXS_FILE", VisualXSharpLanguage)
+internal object TalaTypes {
+  val FILE = IFileElementType("TALA_FILE", TalaLanguage)
 
   val KEYWORD = element("KEYWORD")
   val IDENTIFIER = element("IDENTIFIER")
@@ -105,18 +105,18 @@ internal object VisualXSharpTypes {
       TokenKind.INVALID -> TokenType.BAD_CHARACTER
     }
 
-  private fun element(name: String): IElementType = IElementType(name, VisualXSharpLanguage)
+  private fun element(name: String): IElementType = IElementType(name, TalaLanguage)
 }
 
 /**
- * The Visual X# lexer of the PSI platform.
+ * The Tala lexer of the PSI platform.
  *
- * It does not define the lexical rules a second time: it presents the tokens of [VisualXSharpTokenizer] in the
+ * It does not define the lexical rules a second time: it presents the tokens of [TalaTokenizer] in the
  * form the platform expects, in which whitespace is a token too and every character belongs to exactly one
  * token. The one addition is the preprocessor directive, which the grammar ends at the end of its line; the
  * parser cannot see line ends, so the lexer reports the whole directive as one token.
  */
-internal class VisualXSharpLexer : LexerBase() {
+internal class TalaLexer : LexerBase() {
   private var buffer: CharSequence = ""
   private var bufferEnd = 0
   private var tokens: List<Token> = emptyList()
@@ -132,7 +132,7 @@ internal class VisualXSharpLexer : LexerBase() {
     this.buffer = buffer
     bufferEnd = endOffset
     base = startOffset
-    tokens = VisualXSharpTokenizer.tokenize(buffer.subSequence(startOffset, endOffset))
+    tokens = TalaTokenizer.tokenize(buffer.subSequence(startOffset, endOffset))
     index = 0
     position = startOffset
     locate()
@@ -173,30 +173,30 @@ internal class VisualXSharpLexer : LexerBase() {
     }
     val token = next!!
     if (buffer[position] == '#' && buffer.at(position + 1).isIdentifierStart()) {
-      currentType = VisualXSharpTypes.DIRECTIVE
+      currentType = TalaTypes.DIRECTIVE
       var end = position
       while (end < bufferEnd && !isLineBreak(buffer[end])) end++
       currentEnd = end
       return
     }
-    currentType = VisualXSharpTypes.of(token.kind)
+    currentType = TalaTypes.of(token.kind)
     currentEnd = base + token.end
   }
 }
 
-/** Connects the Visual X# lexer and parser to the PSI platform. */
-internal class VisualXSharpParserDefinition : ParserDefinition {
-  override fun createLexer(project: Project?): Lexer = VisualXSharpLexer()
+/** Connects the Tala lexer and parser to the PSI platform. */
+internal class TalaParserDefinition : ParserDefinition {
+  override fun createLexer(project: Project?): Lexer = TalaLexer()
 
-  override fun createParser(project: Project?): PsiParser = VisualXSharpParser()
+  override fun createParser(project: Project?): PsiParser = TalaParser()
 
-  override fun getFileNodeType(): IFileElementType = VisualXSharpTypes.FILE
+  override fun getFileNodeType(): IFileElementType = TalaTypes.FILE
 
-  override fun getCommentTokens(): TokenSet = VisualXSharpTypes.COMMENTS
+  override fun getCommentTokens(): TokenSet = TalaTypes.COMMENTS
 
-  override fun getStringLiteralElements(): TokenSet = VisualXSharpTypes.STRINGS
+  override fun getStringLiteralElements(): TokenSet = TalaTypes.STRINGS
 
   override fun createElement(node: ASTNode): PsiElement = ASTWrapperPsiElement(node)
 
-  override fun createFile(viewProvider: FileViewProvider): PsiFile = VisualXSharpFile(viewProvider)
+  override fun createFile(viewProvider: FileViewProvider): PsiFile = TalaFile(viewProvider)
 }

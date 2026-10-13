@@ -22,21 +22,24 @@ class CompilerClientTest {
       var observed: CompilerInvocation? = null
       val runner = CompilerProcessRunner { invocation ->
         observed = invocation
-        val diagnosticsPath = Path.of(invocation.environment.getValue("VXS_DIAGNOSTICS_FILE"))
+        val diagnosticsPath = Path.of(invocation.environment.getValue("TALA_DIAGNOSTICS_FILE"))
         assertTrue(Files.isRegularFile(diagnosticsPath))
         assertEquals(0L, Files.size(diagnosticsPath))
         Files.write(diagnosticsPath, WireWriter().header(0).toByteArray())
         CompilerProcessResult(0, "checked\n".toByteArray(), byteArrayOf(), false)
       }
 
-      val result = VisualXSharpCompilerClient(runner).check(CompilerRequest(source))
+      val result = TalaCompilerClient(runner).check(CompilerRequest(source, "Demo.Program"))
 
-      assertEquals(listOf("vxs", "check", "-File", source.toString()), observed?.command)
+      assertEquals(
+        listOf("talac", "--entry=Demo.Program", "--emit=metadata", "--", source.toString()),
+        observed?.command,
+      )
       assertEquals(source.parent, observed?.workingDirectory)
       assertTrue(result.succeeded)
       assertEquals("checked\n", result.standardOutput)
       assertTrue(result.diagnostics.diagnostics.isEmpty())
-      assertFalse(Files.exists(Path.of(observed!!.environment.getValue("VXS_DIAGNOSTICS_FILE"))))
+      assertFalse(Files.exists(Path.of(observed!!.environment.getValue("TALA_DIAGNOSTICS_FILE"))))
     }
   }
 
@@ -49,22 +52,22 @@ class CompilerClientTest {
             .header(1)
             .byte(DiagnosticStage.PARSER.ordinal)
             .byte(DiagnosticSeverity.ERROR.ordinal)
-            .text("VXP1")
+            .text("TAP0001")
             .text("expected declaration")
             .count(0)
             .boolean(false)
             .count(0)
             .count(0)
             .toByteArray()
-        Files.write(Path.of(invocation.environment.getValue("VXS_DIAGNOSTICS_FILE")), diagnostic)
+        Files.write(Path.of(invocation.environment.getValue("TALA_DIAGNOSTICS_FILE")), diagnostic)
         CompilerProcessResult(1, byteArrayOf(), "human fallback".toByteArray(), false)
       }
 
-      val result = VisualXSharpCompilerClient(runner).check(CompilerRequest(source))
+      val result = TalaCompilerClient(runner).check(CompilerRequest(source, "Demo.Program"))
 
       assertFalse(result.succeeded)
       assertEquals(1, result.exitCode)
-      assertEquals("VXP1", result.diagnostics.diagnostics.single().code)
+      assertEquals("TAP0001", result.diagnostics.diagnostics.single().code)
       assertEquals("human fallback", result.standardError)
     }
   }
@@ -73,12 +76,58 @@ class CompilerClientTest {
   fun refusesToParseTerminalTextWhenTheProtocolFileIsMissing() {
     withSource { source ->
       val runner = CompilerProcessRunner {
-        CompilerProcessResult(1, byteArrayOf(), "VXP1: tempting but unstructured".toByteArray(), false)
+        CompilerProcessResult(1, byteArrayOf(), "TAP0001: tempting but unstructured".toByteArray(), false)
       }
 
       assertFailsWith<CompilerClientException> {
-        VisualXSharpCompilerClient(runner).check(CompilerRequest(source))
+        TalaCompilerClient(runner).check(CompilerRequest(source, "Demo.Program"))
       }
+    }
+  }
+
+  @Test
+  fun removesTheCheckRecordItCausedAndKeepsOneThatWasThere() {
+    withSource { source ->
+      val record = source.resolveSibling("Main.talameta")
+      val runner = CompilerProcessRunner { invocation ->
+        Files.write(Path.of(invocation.environment.getValue("TALA_DIAGNOSTICS_FILE")), WireWriter().header(0).toByteArray())
+        Files.writeString(record, "talameta 1\n")
+        CompilerProcessResult(0, byteArrayOf(), byteArrayOf(), false)
+      }
+
+      TalaCompilerClient(runner).check(CompilerRequest(source, "Demo.Program"))
+      assertFalse(Files.exists(record))
+
+      Files.writeString(record, "kept by its owner")
+      TalaCompilerClient(runner).check(CompilerRequest(source, "Demo.Program"))
+      assertTrue(Files.exists(record))
+      Files.delete(record)
+    }
+  }
+
+  @Test
+  fun aSourceWithoutAnEntryIsCheckedWithoutOne() {
+    withSource { source ->
+      var command: List<String>? = null
+      val runner = CompilerProcessRunner { invocation ->
+        command = invocation.command
+        Files.write(Path.of(invocation.environment.getValue("TALA_DIAGNOSTICS_FILE")), WireWriter().header(0).toByteArray())
+        CompilerProcessResult(0, byteArrayOf(), byteArrayOf(), false)
+      }
+
+      TalaCompilerClient(runner).check(CompilerRequest(source))
+
+      assertEquals(listOf("talac", "--emit=metadata", "--", source.toString()), command)
+    }
+  }
+
+  @Test
+  fun anEntryIsAClassWrittenWithItsNamespace() {
+    withSource { source ->
+      listOf("Program", "", "Demo.", "Demo..Program", "--emit=core", "Demo.Pro gram").forEach { entry ->
+        assertFailsWith<IllegalArgumentException> { CompilerRequest(source, entry) }
+      }
+      assertEquals("A.B.Program", CompilerRequest(source, "A.B.Program").entry)
     }
   }
 
@@ -87,7 +136,7 @@ class CompilerClientTest {
     withSource { source ->
       val runner = CompilerProcessRunner { CompilerProcessResult(-1, byteArrayOf(), byteArrayOf(), true) }
 
-      val result = VisualXSharpCompilerClient(runner).check(CompilerRequest(source))
+      val result = TalaCompilerClient(runner).check(CompilerRequest(source, "Demo.Program"))
 
       assertTrue(result.timedOut)
       assertFalse(result.succeeded)
@@ -100,15 +149,15 @@ class CompilerClientTest {
     val directory = createTempDirectory("xide-compiler-search-test-")
     val projectDirectory = Files.createDirectories(directory.resolve("project"))
     val toolDirectory = Files.createDirectories(directory.resolve("tools"))
-    val projectExecutable = projectDirectory.resolve("vxs.exe")
-    val pathExecutable = toolDirectory.resolve("vxs.exe")
+    val projectExecutable = projectDirectory.resolve("talac.exe")
+    val pathExecutable = toolDirectory.resolve("talac.exe")
     try {
       Files.writeString(projectExecutable, "project-provided executable")
       Files.writeString(pathExecutable, "PATH-provided executable")
 
       val resolved =
         SystemCompilerProcessRunner().resolveCompilerExecutable(
-          executable = "vxs",
+          executable = "talac",
           workingDirectory = projectDirectory,
           pathValue = ".${File.pathSeparator}$toolDirectory",
           windows = true,
@@ -122,7 +171,7 @@ class CompilerClientTest {
 
   @Test
   fun rejectsMissingSourceFilesBeforeStartingAProcess() {
-    val missing = Path.of("C:/definitely-missing-xide-test/Main.vxs").toAbsolutePath()
+    val missing = Path.of("C:/definitely-missing-xide-test/Main.tala").toAbsolutePath()
     var invoked = false
     val runner = CompilerProcessRunner {
       invoked = true
@@ -130,14 +179,14 @@ class CompilerClientTest {
     }
 
     assertFailsWith<IllegalArgumentException> {
-      VisualXSharpCompilerClient(runner).check(CompilerRequest(missing))
+      TalaCompilerClient(runner).check(CompilerRequest(missing, "Demo.Program"))
     }
     assertFalse(invoked)
   }
 
   private fun withSource(action: (Path) -> Unit) {
     val directory = createTempDirectory("xide-compiler-test-")
-    val source = directory.resolve("Main.vxs")
+    val source = directory.resolve("Main.tala")
     try {
       Files.writeString(source, "namespace Example;\n")
       action(source)

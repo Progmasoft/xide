@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class ScalarPositionTest {
-  private fun snapshot(text: String) = DocumentSnapshot(URI.create("untitled:Scalars.vxs"), 0, text)
+  private fun snapshot(text: String) = DocumentSnapshot(URI.create("untitled:Scalars.tala"), 0, text)
 
   @Test
   fun scalarColumnsEqualUtf16ColumnsForBasicMultilingualText() {

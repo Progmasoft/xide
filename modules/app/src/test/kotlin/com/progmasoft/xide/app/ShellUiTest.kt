@@ -58,7 +58,7 @@ class ShellUiTest {
 
   @Test
   fun theProjectToolWindowBrowsesAndOpensSources() = runComposeUiTest {
-    val root = project("src/Main.vxs" to "namespace Demo;\n", "README.md" to "notes\n", "build/out.txt" to "")
+    val root = project("src/Main.tala" to "namespace Demo;\n", "README.md" to "notes\n", "build/out.txt" to "")
     Files.writeString(root.resolve(".gitignore"), "build/\n")
     val session = WorkspaceSession()
     setContent { XideApplication(owner = null, session = session, initialProject = ProjectTree(root)) }
@@ -68,13 +68,13 @@ class ShellUiTest {
     onNodeWithText("src").assertExists()
     onNodeWithText("README.md").assertExists()
     onNodeWithText("build").assertDoesNotExist()
-    onNodeWithText("Main.vxs").assertDoesNotExist()
+    onNodeWithText("Main.tala").assertDoesNotExist()
 
     onNodeWithText("src").performClick()
-    awaitText("Main.vxs")
+    awaitText("Main.tala")
 
-    onNodeWithText("Main.vxs").performClick()
-    awaitText("Opened Main.vxs")
+    onNodeWithText("Main.tala").performClick()
+    awaitText("Opened Main.tala")
     assertEquals("namespace Demo;\n", session.snapshot().activeDocument?.snapshot?.text)
     onNode(hasSetTextAction()).assertTextEquals("namespace Demo;\n")
 
@@ -85,22 +85,22 @@ class ShellUiTest {
 
     // The name is now shown by the tree row, the tab and the Problems header. Collapsing the directory removes
     // only the tree row; the document stays open.
-    assertEquals(3, onAllNodesWithText("Main.vxs").fetchSemanticsNodes().size)
+    assertEquals(3, onAllNodesWithText("Main.tala").fetchSemanticsNodes().size)
     onNodeWithText("src").performClick()
-    waitUntil(timeoutMillis = 10_000) { onAllNodesWithText("Main.vxs").fetchSemanticsNodes().size == 2 }
+    waitUntil(timeoutMillis = 10_000) { onAllNodesWithText("Main.tala").fetchSemanticsNodes().size == 2 }
     assertEquals(1, session.snapshot().documents.size)
   }
 
   @Test
   fun reloadShowsFilesCreatedOutsideTheEditor() = runComposeUiTest {
-    val root = project("A.vxs" to "")
+    val root = project("A.tala" to "")
     setContent { XideApplication(owner = null, initialProject = ProjectTree(root)) }
-    onNodeWithText("A.vxs").assertExists()
+    onNodeWithText("A.tala").assertExists()
 
-    Files.writeString(root.resolve("B.vxs"), "")
-    onNodeWithText("B.vxs").assertDoesNotExist()
+    Files.writeString(root.resolve("B.tala"), "")
+    onNodeWithText("B.tala").assertDoesNotExist()
     onNodeWithContentDescription("Reload project files").performClick()
-    awaitText("B.vxs")
+    awaitText("B.tala")
   }
 
   @Test
@@ -149,19 +149,19 @@ class ShellUiTest {
 
   @Test
   fun anUnmodifiedTabClosesImmediately() = runComposeUiTest {
-    val root = project("A.vxs" to "a\n", "B.vxs" to "b\n")
+    val root = project("A.tala" to "a\n", "B.tala" to "b\n")
     val session = WorkspaceSession()
-    session.openFile(root.resolve("A.vxs"))
-    session.openFile(root.resolve("B.vxs"))
+    session.openFile(root.resolve("A.tala"))
+    session.openFile(root.resolve("B.tala"))
     setContent { XideApplication(owner = null, session = session) }
 
-    onNodeWithContentDescription("Close A.vxs").performClick()
+    onNodeWithContentDescription("Close A.tala").performClick()
     waitForIdle()
-    assertEquals(listOf("B.vxs"), session.snapshot().documents.map { it.title })
-    onNodeWithContentDescription("Close A.vxs").assertDoesNotExist()
-    onNodeWithText("Closed A.vxs").assertExists()
+    assertEquals(listOf("B.tala"), session.snapshot().documents.map { it.title })
+    onNodeWithContentDescription("Close A.tala").assertDoesNotExist()
+    onNodeWithText("Closed A.tala").assertExists()
 
-    onNodeWithContentDescription("Close B.vxs").performClick()
+    onNodeWithContentDescription("Close B.tala").performClick()
     waitForIdle()
     assertTrue(session.snapshot().documents.isEmpty())
     onNodeWithText("Create or open a file to begin editing.").assertExists()
@@ -169,63 +169,63 @@ class ShellUiTest {
 
   @Test
   fun aModifiedTabAsksBeforeItCloses() = runComposeUiTest {
-    val root = project("A.vxs" to "a\n")
+    val root = project("A.tala" to "a\n")
     val session = WorkspaceSession()
-    session.openFile(root.resolve("A.vxs"))
+    session.openFile(root.resolve("A.tala"))
     setContent { XideApplication(owner = null, session = session) }
 
     onNode(hasSetTextAction()).performTextInput("edited ")
     waitForIdle()
-    onNodeWithContentDescription("Close A.vxs").performClick()
+    onNodeWithContentDescription("Close A.tala").performClick()
     waitForIdle()
 
     // Nothing is closed and nothing is lost while the question is open.
-    onNodeWithText("A.vxs has unsaved changes.").assertExists()
+    onNodeWithText("A.tala has unsaved changes.").assertExists()
     assertEquals(1, session.snapshot().documents.size)
 
     onNodeWithText("Cancel").performClick()
     waitForIdle()
-    onNodeWithText("A.vxs has unsaved changes.").assertDoesNotExist()
+    onNodeWithText("A.tala has unsaved changes.").assertDoesNotExist()
     assertEquals("edited a\n", session.snapshot().activeDocument?.snapshot?.text)
 
-    onNodeWithContentDescription("Close A.vxs").performClick()
+    onNodeWithContentDescription("Close A.tala").performClick()
     waitForIdle()
     onNodeWithText("Discard Changes").performClick()
     waitForIdle()
     assertTrue(session.snapshot().documents.isEmpty())
     // The file on disk still has what was last saved.
-    assertEquals("a\n", Files.readString(root.resolve("A.vxs")))
+    assertEquals("a\n", Files.readString(root.resolve("A.tala")))
   }
 
   @Test
   fun saveAndCloseWritesTheTextBeforeTheTabGoesAway() = runComposeUiTest {
-    val root = project("A.vxs" to "a\n")
+    val root = project("A.tala" to "a\n")
     val session = WorkspaceSession()
-    session.openFile(root.resolve("A.vxs"))
+    session.openFile(root.resolve("A.tala"))
     setContent { XideApplication(owner = null, session = session) }
 
     onNode(hasSetTextAction()).performTextInput("kept ")
     waitForIdle()
-    onNodeWithContentDescription("Close A.vxs").performClick()
+    onNodeWithContentDescription("Close A.tala").performClick()
     waitForIdle()
     onNodeWithText("Save and Close").performClick()
     waitUntil(timeoutMillis = 10_000) { session.snapshot().documents.isEmpty() }
 
-    assertEquals("kept a\n", Files.readString(root.resolve("A.vxs")))
+    assertEquals("kept a\n", Files.readString(root.resolve("A.tala")))
   }
 
   @Test
   fun theGutterAndStatusBarFollowTheText() = runComposeUiTest {
-    val root = project("A.vxs" to "one\ntwo\n")
+    val root = project("A.tala" to "one\ntwo\n")
     val session = WorkspaceSession()
-    session.openFile(root.resolve("A.vxs"))
+    session.openFile(root.resolve("A.tala"))
     setContent { XideApplication(owner = null, session = session) }
 
     onNodeWithContentDescription("Line numbers").assertTextEquals("1\n2\n3")
     onNodeWithContentDescription("Caret position").assertTextEquals("1:1")
     onNodeWithContentDescription("Line separator").assertTextEquals("LF")
     onNodeWithContentDescription("File encoding").assertTextEquals("UTF-8")
-    onNodeWithContentDescription("Language").assertTextEquals("Visual X#")
+    onNodeWithContentDescription("Language").assertTextEquals("Tala")
 
     // Typing at the start moves the caret and adds a line to the gutter.
     onNode(hasSetTextAction()).performTextInput("x\ny")
@@ -236,15 +236,15 @@ class ShellUiTest {
 
   @Test
   fun problemsMarkTheirLinesAndAreCounted() = runComposeUiTest {
-    val root = project("A.vxs" to "one\ntwo\nthree\n")
-    val file = root.resolve("A.vxs")
+    val root = project("A.tala" to "one\ntwo\nthree\n")
+    val file = root.resolve("A.tala")
     val session = WorkspaceSession()
     val opened = session.openFile(file).activeDocument!!
     fun diagnostic(severity: DiagnosticSeverity, line: UInt, message: String) =
       CompilerDiagnostic(
         stage = DiagnosticStage.TYPE_CHECKER,
         severity = severity,
-        code = "VXS-TEST",
+        code = "TALA-TEST",
         message = message,
         arguments = emptyList(),
         primaryLocation = SourceLocation(file.toString(), SourceRange(SourcePosition(line, 0u), SourcePosition(line, 1u))),
@@ -268,8 +268,8 @@ class ShellUiTest {
     onNodeWithContentDescription("Problem markers").assertTextEquals(" \n●\n●\n ")
     onNodeWithContentDescription("Problems in the active document").assertTextEquals("1 error, 1 warning")
     onNodeWithText("broken line").assertExists()
-    onNodeWithText("A.vxs:2:1").assertExists()
-    onNodeWithText("A.vxs  1 error, 1 warning").assertExists()
+    onNodeWithText("A.tala:2:1").assertExists()
+    onNodeWithText("A.tala  1 error, 1 warning").assertExists()
 
     // An edit makes the check stale: markers, rows and counts all go away together.
     onNode(hasSetTextAction()).performTextInput("x")
@@ -277,7 +277,7 @@ class ShellUiTest {
     onNodeWithContentDescription("Problem markers").assertTextEquals(" \n \n \n ")
     onNodeWithContentDescription("Problems in the active document").assertDoesNotExist()
     onNodeWithText("broken line").assertDoesNotExist()
-    onNodeWithText("Run Check to see the problems of A.vxs.").assertExists()
+    onNodeWithText("Run Check to see the problems of A.tala.").assertExists()
   }
 
   @Test
@@ -287,9 +287,9 @@ class ShellUiTest {
 
     onNodeWithText("New").performClick()
     waitForIdle()
-    assertEquals(listOf("Xide-1.vxs"), session.snapshot().documents.map { it.title })
-    onNodeWithText("Created Xide-1.vxs").assertExists()
-    onNodeWithContentDescription("Close Xide-1.vxs").assertExists()
+    assertEquals(listOf("Xide-1.tala"), session.snapshot().documents.map { it.title })
+    onNodeWithText("Created Xide-1.tala").assertExists()
+    onNodeWithContentDescription("Close Xide-1.tala").assertExists()
   }
 
   @Test
@@ -307,7 +307,7 @@ class ShellUiTest {
     waitForIdle()
     assertEquals("// edited\nplugins {}\n", session.snapshot().activeDocument?.snapshot?.text)
 
-    // The compiler check belongs to Visual X#; for Kotlin the action is unavailable rather than misleading.
+    // The compiler check belongs to Tala; for Kotlin the action is unavailable rather than misleading.
     onNodeWithText("Check").performClick()
     waitForIdle()
     assertEquals(null, session.snapshot().activeDocument?.diagnostics)

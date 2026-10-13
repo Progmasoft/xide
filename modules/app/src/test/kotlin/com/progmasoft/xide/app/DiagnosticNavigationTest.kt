@@ -31,7 +31,7 @@ class DiagnosticNavigationTest {
         CompilerDiagnostic(
           stage = DiagnosticStage.TYPE_CHECKER,
           severity = DiagnosticSeverity.ERROR,
-          code = "VXS-TEST",
+          code = "TALA-TEST",
           message = "test diagnostic",
           arguments = emptyList(),
           primaryLocation = it,
@@ -56,7 +56,7 @@ class DiagnosticNavigationTest {
   fun scalarColumnsResolveToUtf16OffsetsOfTheCheckedDocument() {
     val directory = createTempDirectory("xide-navigation")
     // The emoji is one scalar column but two UTF-16 code units, so `value` starts at scalar column 5 but UTF-16 column 6.
-    val file = write(directory, "Main.vxs", "line one\n-- 😀 value here\n")
+    val file = write(directory, "Main.tala", "line one\n-- 😀 value here\n")
     val session = WorkspaceSession()
     val place = location(file.toString(), 1u, 5u, 1u, 10u)
     val owner = checked(session, file, place)
@@ -74,11 +74,11 @@ class DiagnosticNavigationTest {
   @Test
   fun relativeSourceIdentityIsResolvedAgainstTheCheckedDocumentDirectory() {
     val directory = createTempDirectory("xide-navigation")
-    val file = write(directory, "Main.vxs", "abc\n")
+    val file = write(directory, "Main.tala", "abc\n")
     val session = WorkspaceSession()
     val owner = checked(session, file)
 
-    val target = session.locate(owner, location("./Main.vxs", 0u, 1u, 0u, 2u))
+    val target = session.locate(owner, location("./Main.tala", 0u, 1u, 0u, 2u))
 
     assertEquals(TextRange(1, 2), target?.range)
   }
@@ -86,8 +86,8 @@ class DiagnosticNavigationTest {
   @Test
   fun locationsInAnotherOpenAndUnmodifiedFileSelectThatDocument() {
     val directory = createTempDirectory("xide-navigation")
-    val main = write(directory, "Main.vxs", "main\n")
-    val other = write(directory, "Other.vxs", "first\nsecond\n")
+    val main = write(directory, "Main.tala", "main\n")
+    val other = write(directory, "Other.tala", "first\nsecond\n")
     val session = WorkspaceSession()
     val otherIndex = session.openFile(other).activeIndex!!
     val owner = checked(session, main)
@@ -101,8 +101,8 @@ class DiagnosticNavigationTest {
   @Test
   fun editedDocumentsAreNeverNavigationTargets() {
     val directory = createTempDirectory("xide-navigation")
-    val main = write(directory, "Main.vxs", "main\n")
-    val other = write(directory, "Other.vxs", "first\nsecond\n")
+    val main = write(directory, "Main.tala", "main\n")
+    val other = write(directory, "Other.tala", "first\nsecond\n")
     val session = WorkspaceSession()
     session.openFile(other)
     val owner = checked(session, main)
@@ -111,7 +111,7 @@ class DiagnosticNavigationTest {
     assertNotNull(session.locate(owner, inOther))
     assertNotNull(session.locate(owner, inMain))
 
-    // The compiler read Other.vxs from disk; an unsaved edit makes every reported offset there unreliable.
+    // The compiler read Other.tala from disk; an unsaved edit makes every reported offset there unreliable.
     session.select(0)
     session.replaceActiveText("inserted\nfirst\nsecond\n")
     assertNull(session.locate(owner, inOther))
@@ -126,7 +126,7 @@ class DiagnosticNavigationTest {
   @Test
   fun locationsOutsideAnyOpenDocumentAreDeclinedInsteadOfClamped() {
     val directory = createTempDirectory("xide-navigation")
-    val file = write(directory, "Main.vxs", "ab\ncd")
+    val file = write(directory, "Main.tala", "ab\ncd")
     val session = WorkspaceSession()
     val owner = checked(session, file)
     val source = file.toString()
@@ -136,7 +136,7 @@ class DiagnosticNavigationTest {
     assertNull(session.locate(owner, location(source, 0u, 0u, 9u, 0u)))
     assertNull(session.locate(owner, location(source, UInt.MAX_VALUE, 0u, UInt.MAX_VALUE, 0u)))
     assertNull(session.locate(owner, location(source, 0u, UInt.MAX_VALUE, 0u, UInt.MAX_VALUE)))
-    assertNull(session.locate(owner, location(directory.resolve("NotOpen.vxs").toString(), 0u, 0u, 0u, 0u)))
+    assertNull(session.locate(owner, location(directory.resolve("NotOpen.tala").toString(), 0u, 0u, 0u, 0u)))
     assertNull(session.locate(owner, location("\u0000invalid", 0u, 0u, 0u, 0u)))
     assertNull(session.locate(owner + 7, location(source, 0u, 0u, 0u, 0u)))
     // The end of the last line is a valid, empty location.
@@ -146,7 +146,7 @@ class DiagnosticNavigationTest {
   @Test
   fun documentsWithoutCurrentDiagnosticsOwnNoLocations() {
     val directory = createTempDirectory("xide-navigation")
-    val file = write(directory, "Main.vxs", "abc\n")
+    val file = write(directory, "Main.tala", "abc\n")
     val session = WorkspaceSession()
     val workspace = session.openFile(file)
     val place = location(file.toString(), 0u, 0u, 0u, 1u)

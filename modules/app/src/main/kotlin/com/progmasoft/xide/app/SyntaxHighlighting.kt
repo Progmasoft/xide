@@ -18,7 +18,7 @@ import com.progmasoft.xide.syntax.PythonTokenizer
 import com.progmasoft.xide.syntax.Token
 import com.progmasoft.xide.syntax.TokenKind
 import com.progmasoft.xide.syntax.Tokenizer
-import com.progmasoft.xide.syntax.VisualXSharpTokenizer
+import com.progmasoft.xide.syntax.TalaTokenizer
 
 /**
  * The longest text, in UTF-16 code units, that is coloured.
@@ -31,13 +31,13 @@ internal const val MAXIMUM_HIGHLIGHTED_LENGTH: Int = 400_000
 /**
  * The tokenizer that colours this language.
  *
- * Kotlin, Java and Groovy are coloured by the IntelliJ lexers of the PSI module; Visual X# and Python by the
+ * Kotlin, Java and Groovy are coloured by the IntelliJ lexers of the PSI module; Tala and Python by the
  * tokenizers of the syntax module.
  */
 internal val SourceLanguage.tokenizer: Tokenizer
   get() =
     when (this) {
-      SourceLanguage.VISUAL_XSHARP -> VisualXSharpTokenizer
+      SourceLanguage.TALA -> TalaTokenizer
       SourceLanguage.KOTLIN -> SourceAnalyzer.tokenizer(PsiLanguage.KOTLIN)
       SourceLanguage.JAVA -> SourceAnalyzer.tokenizer(PsiLanguage.JAVA)
       SourceLanguage.GROOVY -> SourceAnalyzer.tokenizer(PsiLanguage.GROOVY)

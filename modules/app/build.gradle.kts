@@ -66,7 +66,7 @@ compose.desktop {
         nativeDistributions {
             packageName = "Xide"
             packageVersion = project.version.toString()
-            description = "Visual X# integrated development environment"
+            description = "Tala integrated development environment"
             vendor = "Progmasoft"
         }
     }

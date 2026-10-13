@@ -6,7 +6,7 @@
 package com.progmasoft.xide.psi
 
 import com.progmasoft.xide.syntax.Tokenizer
-import com.progmasoft.xide.syntax.VisualXSharpTokenizer
+import com.progmasoft.xide.syntax.TalaTokenizer
 import org.jetbrains.kotlin.com.intellij.lang.Language
 import org.jetbrains.kotlin.com.intellij.lang.java.JavaLanguage
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
@@ -20,7 +20,7 @@ import org.jetbrains.plugins.groovy.GroovyLanguage
  * The languages that have a syntax tree in Xide.
  *
  * Kotlin and Java are parsed by the parsers of the Kotlin compiler and of IntelliJ, Groovy by the parser of the
- * IntelliJ Groovy plugin, and Visual X# by Xide's own structural parser on the same platform.
+ * IntelliJ Groovy plugin, and Tala by Xide's own structural parser on the same platform.
  *
  * @property defaultFileName the file name a text is parsed under when the caller gives none. The extension
  *   matters for Kotlin, where a `.kts` name selects the script grammar.
@@ -35,8 +35,8 @@ enum class PsiLanguage(val defaultFileName: String) {
   /** Groovy sources and Groovy-based Gradle build scripts. */
   GROOVY("Source.groovy"),
 
-  /** Visual X# sources. */
-  VISUAL_XSHARP("Source.vxs"),
+  /** Tala sources. */
+  TALA("Source.tala"),
 }
 
 /**
@@ -92,7 +92,7 @@ data class OutlineEntry(
 /**
  * What the syntax tree of one text says about it.
  *
- * @property problems the syntax errors, in source order. The list is always empty for Visual X#, whose errors
+ * @property problems the syntax errors, in source order. The list is always empty for Tala, whose errors
  *   are reported by the compiler.
  * @property outline the declarations of the file, in source order.
  */
@@ -119,7 +119,7 @@ object SourceAnalyzer {
   /**
    * The tokenizer that colours [language].
    *
-   * Kotlin, Java and Groovy are tokenized by the IntelliJ lexers of those languages; Visual X# by Xide's own
+   * Kotlin, Java and Groovy are tokenized by the IntelliJ lexers of those languages; Tala by Xide's own
    * tokenizer. A tokenizer needs no platform and no parse.
    */
   fun tokenizer(language: PsiLanguage): Tokenizer =
@@ -127,7 +127,7 @@ object SourceAnalyzer {
       PsiLanguage.KOTLIN -> KotlinLexerTokenizer
       PsiLanguage.JAVA -> JavaLexerTokenizer
       PsiLanguage.GROOVY -> GroovyLexerTokenizer
-      PsiLanguage.VISUAL_XSHARP -> VisualXSharpTokenizer
+      PsiLanguage.TALA -> TalaTokenizer
     }
 
   /**
@@ -140,7 +140,7 @@ object SourceAnalyzer {
   fun analyze(language: PsiLanguage, text: String, fileName: String = language.defaultFileName): SourceAnalysis =
     parse(language, text, fileName) { file ->
       val problems = ArrayList<SyntaxProblem>()
-      if (language != PsiLanguage.VISUAL_XSHARP) collectProblems(file, problems)
+      if (language != PsiLanguage.TALA) collectProblems(file, problems)
       SourceAnalysis(problems, Outlines.of(language, file))
     }
 
@@ -166,7 +166,7 @@ object SourceAnalyzer {
       PsiLanguage.KOTLIN -> KotlinLanguage.INSTANCE
       PsiLanguage.JAVA -> JavaLanguage.INSTANCE
       PsiLanguage.GROOVY -> GroovyLanguage.INSTANCE
-      PsiLanguage.VISUAL_XSHARP -> VisualXSharpLanguage
+      PsiLanguage.TALA -> TalaLanguage
     }
 
   private fun collectProblems(element: PsiElement, into: MutableList<SyntaxProblem>) {

@@ -134,7 +134,7 @@ internal fun EditorArea(
   if (document == null) {
     Box(modifier.background(XideColors.editor), contentAlignment = Alignment.Center) {
       Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        BasicText("Visual X#", style = XideType.ui.copy(fontSize = XideType.ui.fontSize * 2))
+        BasicText("Tala", style = XideType.ui.copy(fontSize = XideType.ui.fontSize * 2))
         BasicText("Create or open a file to begin editing.", style = XideType.uiMuted)
       }
     }

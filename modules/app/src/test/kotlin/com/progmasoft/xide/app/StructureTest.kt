@@ -23,7 +23,7 @@ class StructureTest {
 
   @Test
   fun everyLanguageWithAParserHasAStructure() {
-    assertEquals(PsiLanguage.VISUAL_XSHARP, SourceLanguage.VISUAL_XSHARP.psiLanguage)
+    assertEquals(PsiLanguage.TALA, SourceLanguage.TALA.psiLanguage)
     assertEquals(PsiLanguage.KOTLIN, SourceLanguage.KOTLIN.psiLanguage)
     assertEquals(PsiLanguage.JAVA, SourceLanguage.JAVA.psiLanguage)
     assertEquals(PsiLanguage.GROOVY, SourceLanguage.GROOVY.psiLanguage)
@@ -102,9 +102,9 @@ class StructureTest {
   }
 
   @Test
-  fun theStructureOfAVisualXSharpSourceListsItsDeclarations() {
+  fun theStructureOfATalaSourceListsItsDeclarations() {
     val text = "namespace Demo;\npublic class Program {\n    int count;\n    public static void Main() { }\n}\n"
-    val structure = documentStructure(SourceLanguage.VISUAL_XSHARP, snapshot(text, 7))!!
+    val structure = documentStructure(SourceLanguage.TALA, snapshot(text, 7))!!
     assertEquals(uri, structure.uri)
     assertEquals(7, structure.version)
     assertEquals(
@@ -144,8 +144,39 @@ class StructureTest {
     assertNull(documentStructure(SourceLanguage.PYTHON, snapshot("def run():\n    pass\n")))
     assertNull(documentStructure(null, snapshot("anything")))
     val long = "-- filler\n".repeat(MAXIMUM_STRUCTURED_LENGTH / 10 + 1)
-    assertNull(documentStructure(SourceLanguage.VISUAL_XSHARP, snapshot(long)))
-    assertEquals(emptyList(), documentStructure(SourceLanguage.VISUAL_XSHARP, snapshot(""))!!.rows)
+    assertNull(documentStructure(SourceLanguage.TALA, snapshot(long)))
+    assertEquals(emptyList(), documentStructure(SourceLanguage.TALA, snapshot(""))!!.rows)
+  }
+
+  @Test
+  fun theEntryOfACheckIsTheFirstClassWithMainInTheNamespaceOfTheFile() {
+    fun entryOf(text: String) =
+      entryClassOf(com.progmasoft.xide.psi.SourceAnalyzer.analyze(PsiLanguage.TALA, text).outline)
+
+    assertEquals(
+      "Demo.App.Program",
+      entryOf(
+        """
+        namespace Demo.App;
+
+        public class Helper {
+            public static Int Twice(Int value) { return value * 2; }
+        }
+
+        public class Program {
+            public static void Main() { Console.Println("ready"); }
+        }
+
+        public class Second {
+            public static void Main() { }
+        }
+        """
+          .trimIndent()
+      ),
+    )
+    assertNull(entryOf("public class Program { public static void Main() { } }"))
+    assertNull(entryOf("namespace Demo;\npublic class Helper { public static void Run() { } }"))
+    assertNull(entryOf(""))
   }
 
   @Test

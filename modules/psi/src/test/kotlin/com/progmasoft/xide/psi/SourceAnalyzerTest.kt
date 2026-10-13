@@ -226,7 +226,7 @@ class SourceAnalyzerTest {
   @Test
   fun everyParserRebuildsExactlyTheTextItWasGiven() {
     val languages =
-      listOf(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, GroovyLanguage.INSTANCE, VisualXSharpLanguage)
+      listOf(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, GroovyLanguage.INSTANCE, TalaLanguage)
     val random = Random(20261003)
     val fragments = FRAGMENTS
     PsiPlatform.withProject { project ->

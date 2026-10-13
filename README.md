@@ -5,7 +5,7 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 # Xide
 
-Xide is the planned Visual X# integrated development environment. The renewed application is implemented with Kotlin/JVM
+Xide is the planned Tala integrated development environment. The renewed application is implemented with Kotlin/JVM
 25 and Compose Multiplatform. Xide is a future project, is not a primary development focus at present, and is not ready for
 daily use. Current work is limited to small foundation slices that keep the intended architecture coherent.
 
@@ -17,7 +17,7 @@ native Xide distribution contains a minimized Java runtime image rather than req
 
 Built-in language support is prioritized in this order:
 
-1. Visual X#
+1. Tala
 2. Kotlin
 3. Java
 4. Groovy
@@ -45,7 +45,9 @@ The renewed Kotlin/JVM foundation currently has five modules. `xide-document` pr
   positions outside the snapshot instead of clamping them; and
 - stale-version protection for concurrent editor consumers.
 
-`xide-compiler` consumes the bounded VXDG v1 structured diagnostic protocol and invokes the single public `vxs` driver.
+`xide-compiler` consumes the bounded TADG v1 structured diagnostic protocol and starts `talac`, the compiler, as
+`talac [--entry=<class>] --emit=metadata -- <source>`: a check that generates no code. The entry is the first class of
+the file with a `Main` method, written with the namespace of the file; a file without one is checked without an entry.
 Every request uses a unique temporary side channel, drains process output concurrently, enforces a timeout, and refuses to
 reconstruct diagnostics by scraping terminal text. `xide-app` binds results to the exact document version that was checked,
 discards stale asynchronous results after edits, and renders accepted records in its problems surface.
@@ -66,24 +68,24 @@ bottom. UI updates pass through the versioned document API rather than maintaini
 - **Editor.** Each open document has a tab with its own close control. A modified tab does not close silently: a
   bar offers to save, discard, or cancel. The gutter shows line numbers and a marker on each line that has a
   problem; long lines scroll horizontally instead of wrapping so the gutter stays aligned.
-- **Languages.** Visual X# (`.vxs`), Kotlin (`.kt`, `.kts`), Java (`.java`), Groovy (`.groovy`, `.gradle`), and
+- **Languages.** Tala (`.tala`), Kotlin (`.kt`, `.kts`), Java (`.java`), Groovy (`.groovy`, `.gradle`), and
   Python (`.py`) sources open, edit, and save as text. Analysis is a separate capability: the compiler `Check` action
-  is connected for Visual X# only, and it is disabled for the other languages rather than pretending to check them.
-  Until the Visual X# toolchain settles, Kotlin is the first language the editor work targets.
+  is connected for Tala only, and it is disabled for the other languages rather than pretending to check them.
+  Until the Tala toolchain settles, Kotlin is the first language the editor work targets.
 - **Syntax colouring.** The editor colours keywords, numbers, strings with their escapes and embedded expressions,
   comments, documentation comments and annotations for all five languages. Kotlin, Java and Groovy are split into
-  tokens by the IntelliJ lexers of `xide-psi`; Visual X# and Python by the tokenizers of `xide-syntax`. The
+  tokens by the IntelliJ lexers of `xide-psi`; Tala and Python by the tokenizers of `xide-syntax`. The
   tokenizers are total: any text, however malformed, yields tokens that cover every
   non-blank character exactly once, which `checkTokens` verifies. Colouring is lexical only; names are not coloured
   by meaning. Soft keywords such as Kotlin's `value` or Python's `match` are recognized from neighbouring tokens,
   so an unusual position may stay uncoloured. A text longer than 400,000 UTF-16 code units is shown uncoloured.
 - **Syntax trees.** `xide-psi` runs the IntelliJ PSI platform without the IDE. `SourceAnalyzer` parses Kotlin and
   Java with the parsers of the Kotlin embeddable compiler and Groovy with the IntelliJ Groovy parser, and returns
-  the syntax errors and a declaration outline of a text. Visual X# has its own PSI language with a structural
+  the syntax errors and a declaration outline of a text. Tala has its own PSI language with a structural
   parser: it recognizes namespaces, `using` directives, types and members, keeps bodies opaque, and reports no
-  errors, because Visual X# errors come from the compiler. The editor does not show the PSI syntax errors yet, and
+  errors, because Tala errors come from the compiler. The editor does not show the PSI syntax errors yet, and
   there is no resolution or type information.
-- **Structure tool window.** Lists the declarations of the active Visual X#, Kotlin, Java or Groovy document as an
+- **Structure tool window.** Lists the declarations of the active Tala, Kotlin, Java or Groovy document as an
   indented list, from the outline of `SourceAnalyzer`. Selecting a declaration moves the caret to its start, and
   the declaration around the caret is marked. The list is read again a moment after an edit, on a background
   thread, and only while the tool window is open; a row of an older text does not navigate. Python has no parser
@@ -99,7 +101,7 @@ window are not implemented yet.
 
 Selecting a problem reveals its primary location in the editor. A location is resolved only while it is provably the
 text the compiler read: the checked document must still have the version its diagnostics were produced for, and the
-target must be an open, saved, and unmodified `.vxs` file. Locations in files that are not open, in documents edited
+target must be an open, saved, and unmodified `.tala` file. Locations in files that are not open, in documents edited
 since the check, or outside the document are declined with a status message rather than approximated. The editor
 gives up keyboard focus while it shows the range, because a focused text field keeps its own caret; clicking into the
 editor resumes typing. Opening the target file on demand and navigating related locations are not implemented yet.
@@ -132,10 +134,10 @@ uses built-in defaults for values that are not configured.
 
 ## Installation
 
-Xide installation and updates are managed by ProgmaIDEs Toolbox. Install the toolbox globally with Visual X#:
+Xide installation and updates are managed by ProgmaIDEs Toolbox. Install the toolbox globally with Tazel, the build system and package manager of Tala:
 
 ```text
-vxs install -Global Progmasoft.IdeToolbox
+tazel install --global Progmasoft.IdeToolbox
 ```
 
 Open ProgmaIDEs Toolbox and install Xide from there. Automatic updates belong to Toolbox rather than to the Xide process.

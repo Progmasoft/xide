@@ -8,8 +8,8 @@ package com.progmasoft.xide.syntax
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class VisualXSharpTokenizerTest {
-  private val tokenizer = VisualXSharpTokenizer
+class TalaTokenizerTest {
+  private val tokenizer = TalaTokenizer
 
   @Test
   fun aMethodIsSplitIntoKeywordsNamesAndSigns() {
@@ -45,7 +45,7 @@ class VisualXSharpTokenizerTest {
 
   @Test
   fun theKeywordsAreThoseOfTheCompilerLexer() {
-    // The list of `Compiler/Haskell/Syntax/src/Visual/XSharp/Lexer.hs` in the language repository.
+    // The list of `Talac/Haskell/Syntax/src/Progmasoft/Tala/Lexer.hs` in the language repository.
     val expected =
       "and auto bool break byte char class continue do double else enum false final float for guard if int " +
         "internal is lfloat long longint match namespace not null or private protected public return sfloat " +
@@ -152,7 +152,7 @@ class VisualXSharpTokenizerTest {
 
   @Test
   fun everyCompilerKeywordIsAKeyword() {
-    for (keyword in VisualXSharpTokenizer.keywords) {
+    for (keyword in TalaTokenizer.keywords) {
       tokenizer.assertPieces(keyword, K to keyword)
       tokenizer.assertPieces("${keyword}x", I to "${keyword}x")
     }
