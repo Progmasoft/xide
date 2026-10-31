@@ -5,7 +5,7 @@ title: "[Bug] "
 ---
 
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
-<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
+<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0 -->
 
 Xide is an early-stage Kotlin/JVM 25 and Compose Multiplatform IDE, not yet ready for daily use. Report compiler-language bugs in `Progmasoft/tala`; report language-site or account issues in their own repositories. Do not include private projects, credentials, or extension secrets. Send security vulnerabilities privately to support@progmasoft.com.
 

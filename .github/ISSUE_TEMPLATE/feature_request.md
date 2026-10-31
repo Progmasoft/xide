@@ -5,7 +5,7 @@ title: "[Proposal] "
 ---
 
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
-<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
+<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0 -->
 
 Xide is a future Tala IDE built with Kotlin/JVM 25 and Compose Multiplatform. The current foundation is intentionally limited; check the README before assuming a planned feature is already implemented. Language/compiler proposals belong in `Progmasoft/tala`.
 
