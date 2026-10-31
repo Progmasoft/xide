@@ -1,5 +1,5 @@
 SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 Xide third-party notices
 ========================
@@ -44,7 +44,7 @@ https://github.com/JetBrains/intellij-community
     Copyright (C) JetBrains s.r.o.
     https://www.jetbrains.com/idea/
 
-These notices do not change the `MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1` license expression used by Xide
+These notices do not change the `MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0` license expression used by Xide
 source files. Files under `third_party/` keep the license of their origin.
 
 GNUstep Base

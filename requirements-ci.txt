@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 cmake==4.4.3 \
     --hash=sha256:bae3c4954623ec4d62e62c70443f0da7988b733111c2871fcc6a31ead5137e20 \
