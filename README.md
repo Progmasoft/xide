@@ -5,9 +5,15 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 # Xide
 
-Xide is the planned Tala integrated development environment. The renewed application is implemented with Kotlin/JVM
-25 and Compose Multiplatform. Xide is a future project, is not a primary development focus at present, and is not ready for
-daily use. Current work is limited to small foundation slices that keep the intended architecture coherent.
+> [!IMPORTANT]
+> Xide is no longer developed as of 2026-11-08. The repository stays available as it is, but it receives no new
+> features, fixes or releases. For editor support of Tala, use tala-analyzer
+> ([Progmasoft/tala-analyzer](https://github.com/Progmasoft/tala-analyzer)), its language server with the VS Code and
+> IntelliJ integrations.
+
+Xide was planned as the Tala integrated development environment, implemented with Kotlin/JVM 25 and Compose
+Multiplatform. It was not ready for daily use when its development stopped; the sections below describe the design it
+reached.
 
 ## Architecture
 
