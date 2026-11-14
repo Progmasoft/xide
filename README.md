@@ -7,9 +7,17 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 > [!IMPORTANT]
 > Xide is no longer developed as of 2026-11-08. The repository stays available as it is, but it receives no new
-> features, fixes or releases. For editor support of Tala, use tala-analyzer
-> ([Progmasoft/tala-analyzer](https://github.com/Progmasoft/tala-analyzer)), its language server with the VS Code and
-> IntelliJ integrations.
+> features, fixes or releases.
+>
+> - For a traditional IDE, use the [JetBrains IDEs](https://www.jetbrains.com/ides/).
+> - For an agentic IDE, use [Agenceland](https://github.com/Progmasoft/agenceland), which Progmasoft develops in place
+>   of Xide. It is built on Code - OSS and has no release yet.
+>
+> Progmasoft stopped Xide and started Agenceland for two reasons:
+>
+> 1. Building an IDE from scratch is hard. Agenceland starts from the editor of Code - OSS and puts its work into the
+>    agents.
+> 2. There are already many traditional IDEs; agentic IDEs are far fewer.
 
 Xide was planned as the Tala integrated development environment, implemented with Kotlin/JVM 25 and Compose
 Multiplatform. It was not ready for daily use when its development stopped; the sections below describe the design it
